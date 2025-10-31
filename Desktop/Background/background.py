@@ -6,7 +6,7 @@ from skimage.metrics import structural_similarity as ssim
 from collections import deque   
 
 class BackgroundMonitor:
-    def __init__(self, CameraIndex=0, SSIMInterval=5, HistoryLen=10, MaxRows=200):
+    def __init__(self, CameraIndex=0, SSIMInterval=5, HistoryLen=10, MaxRows=10000):
         """ Hybrid (Optical Flow and KNN) computer vision component to determine background changes
 
         Arguments:
@@ -68,33 +68,28 @@ class BackgroundMonitor:
             raise RuntimeError("Error: Failed to read from camera.")
         return cv2.resize(Frame, (640, 480))
     
-    def GetStatus(self, BrightnessDrop, AvgBrightness, MotionRatio):
+    def GetStatus(self, MotionRatio, MeanBrightness):
         """ Determine if background changed, camera blocked, or people are moving
 
         Arguments:
-        - BrightnessDrop (float): Difference in average and current brightness
-        - AvgBrightness (float): Average brightness recently
         - MotionRatio (float): Optical Flow meaurement of motion
+        - MeanBrightness (float): Average brightness over time
         
         Returns:
         - str: Status of background
         """
         Status = "Normal"
 
-        if len(self.BrightnessHistory) >= self.HistoryLen / 2:
-            if BrightnessDrop > AvgBrightness * 0.3:
-                Status = "Lighting Drop / Camera Blocked"
+        if MeanBrightness < 50:
+            return "Lighting Drop / Camera Blocked"
 
-        if Status == "Normal":
-            if self.LastSSIMScore < 0.5:
-                if MotionRatio < 0.05:
-                    Status = "Background Changed"
-                else:
-                    Status = "Person Movement"
-            elif MotionRatio > 0.05:
-                Status = "Person Movement"
+        if 0.1 <= MotionRatio <= 0.6 and 0.45 < self.LastSSIMScore:
+            Status = "Person Movement"
+        elif MotionRatio > 0.7 or self.LastSSIMScore <= 0.45:
+            Status = "Background Changed"
 
         return Status
+
 
     def ProcessFrame(self, Frame):
         """ Extracts Brightness, SSIM, and Motion values from current frame
@@ -109,7 +104,6 @@ class BackgroundMonitor:
             - MotionRatio (float): Metric of movement
             - SSIMScore (float): SSIM score from frame
             - MeanBrightness (float): Frame average brightness
-            - BrightnessDrop (float): Difference in current and average brightness
         """
         Gray = cv2.cvtColor(Frame, cv2.COLOR_BGR2GRAY)
 
@@ -118,7 +112,10 @@ class BackgroundMonitor:
 
         if self.PrevGray is None:
             self.PrevGray = Gray
-            return "Initialising", FGMask, 0.0, 1.0, np.mean(Gray), 0.0
+            if self.ReferenceFrame is None:
+                self.ReferenceFrame = Gray.copy()
+                self.LastSSIMScore = 1.0
+            return "Initialising", FGMask, 0.0, self.LastSSIMScore, float(np.mean(Gray)), 0.0
 
         Flow = cv2.calcOpticalFlowFarneback(
             self.PrevGray, Gray, None,
@@ -127,26 +124,36 @@ class BackgroundMonitor:
         self.PrevGray = Gray
 
         Mag, Ang = cv2.cartToPolar(Flow[..., 0], Flow[..., 1])
-        MotionRatio = np.mean(Mag > 1.0)
-        AvgFlowMag = np.mean(Mag)
+        MotionRatio = float(np.mean(Mag > 1.0))
 
-        MeanBrightness = np.mean(Gray)
+        MeanBrightness = float(np.mean(Gray))
         self.BrightnessHistory.append(MeanBrightness)
-        AvgBrightness = np.mean(self.BrightnessHistory)
-        BrightnessDrop = AvgBrightness - MeanBrightness
 
         CurrentTime = time.time()
         if self.ReferenceFrame is None:
-            self.ReferenceFrame = Gray
+            self.ReferenceFrame = Gray.copy()
+            self.LastSSIMScore = 1.0
 
         if CurrentTime - self.LastSSIMCheck > self.SSIMInterval:
             self.LastSSIMCheck = CurrentTime
-            self.LastSSIMScore, _ = ssim(self.ReferenceFrame, Gray, full=True)
-            self.ReferenceFrame = Gray
+            try:
+                SSIMScore, _ = ssim(self.ReferenceFrame, Gray, full=True)
+            except Exception:
+                SSIMScore = self.LastSSIMScore
+            self.LastSSIMScore = float(SSIMScore)
 
-        Status = self.GetStatus(BrightnessDrop, AvgBrightness, MotionRatio)
+            if MotionRatio < 0.03 and self.LastSSIMScore > 0.98:
+                self.StableCount = getattr(self, "StableCount", 0) + 1
+            else:
+                self.StableCount = 0
 
-        return Status, FGMask, MotionRatio, self.LastSSIMScore, MeanBrightness, BrightnessDrop
+            if getattr(self, "StableCount", 0) >= 3:
+                self.ReferenceFrame = Gray.copy()
+                self.StableCount = 0
+
+        Status = self.GetStatus(MotionRatio, MeanBrightness)
+
+        return Status, FGMask, MotionRatio, self.LastSSIMScore, MeanBrightness, 
 
     def GetDisplay(self, Frame, FGMask, Status):
         """ Shows current frame
@@ -161,7 +168,7 @@ class BackgroundMonitor:
         """
         MaskColoured = cv2.applyColorMap(FGMask, cv2.COLORMAP_JET)
         Display = cv2.addWeighted(Frame, 0.7, MaskColoured, 0.3, 0)
-        OverlayText = f"{Status} | Frame {self.FrameCount}/200"
+        OverlayText = f"{Status} | Frame {self.FrameCount}/10000"
         cv2.putText(Display, OverlayText, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.imshow("Hybrid Background Monitor", Display)
 
@@ -179,14 +186,14 @@ class BackgroundMonitor:
             exit(0)
 
         Frame = self.GetFrame()
-        Status, FGMask, MotionRatio, SSIMScore, Brightness, BrightnessDrop = self.ProcessFrame(Frame)
+        Status, FGMask, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
 
         self.FrameCount += 1
 
         print(
             f"[{self.FrameCount:03d}/200]  "
             f"Motion: {MotionRatio:.3f} | SSIM: {SSIMScore:.3f} | "
-            f"Brightness: {Brightness:.1f} | ΔBright: {BrightnessDrop:.1f} | "
+            f"Brightness: {Brightness:.1f} | "
             f"Status: {Status}"
         )
         LogMetrics(MotionRatio, SSIMScore, Brightness)
