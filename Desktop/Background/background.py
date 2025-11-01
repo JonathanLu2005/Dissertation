@@ -90,7 +90,6 @@ class BackgroundMonitor:
 
         return Status
 
-
     def ProcessFrame(self, Frame):
         """ Extracts Brightness, SSIM, and Motion values from current frame
         
@@ -115,7 +114,7 @@ class BackgroundMonitor:
             if self.ReferenceFrame is None:
                 self.ReferenceFrame = Gray.copy()
                 self.LastSSIMScore = 1.0
-            return "Initialising", FGMask, 0.0, self.LastSSIMScore, float(np.mean(Gray)), 0.0
+            return "Initialising", FGMask, 0.0, self.LastSSIMScore, float(np.mean(Gray))
 
         Flow = cv2.calcOpticalFlowFarneback(
             self.PrevGray, Gray, None,
@@ -153,7 +152,7 @@ class BackgroundMonitor:
 
         Status = self.GetStatus(MotionRatio, MeanBrightness)
 
-        return Status, FGMask, MotionRatio, self.LastSSIMScore, MeanBrightness, 
+        return Status, FGMask, MotionRatio, self.LastSSIMScore, MeanBrightness
 
     def GetDisplay(self, Frame, FGMask, Status):
         """ Shows current frame
