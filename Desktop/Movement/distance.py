@@ -6,7 +6,7 @@ from ultralytics import YOLO
 from Desktop.Movement.Metrics.metrics import LogDistance
 
 class DistanceMonitor:
-    def __init__(self, YoloModel=None, BoxThreshold=470, PoseThreshold=0.5, MaxRows=200, CameraIndex=0):
+    def __init__(self, YoloModel=None, BoxThreshold=478.5, PoseThreshold=0.5, MaxRows=200, CameraIndex=0):
         """ Initialise parameters to determine if persons too close and models to capture this
 
         Arguments:
@@ -198,6 +198,8 @@ class DistanceMonitor:
         PersonHeight = self.DetectPersonHeight(ResultsBox.boxes)
         BoxStatus, BoxAlert = self.ComputeBoxStatus(PersonHeight)
 
+        print(f"[DISTANCE] BoxHeight={PersonHeight} | TorsoWidth={TorsoMeasure}")
+
         FinalAlert = PoseAlert or BoxAlert
 
         FinalStatus = "Safe"
@@ -240,7 +242,6 @@ class DistanceMonitor:
                 Frame,
                 Results["BoxStatus"],
                 Results["PoseStatus"],
-                FinalTorso,
                 FrameNumber
             )
 
