@@ -36,11 +36,7 @@ class MaskMonitor:
         if not self.Cap.isOpened():
             raise RuntimeError("Camera not accessible.")
 
-        self.Client = InferenceHTTPClient(
-            api_url="https://serverless.roboflow.com",
-            api_key=self.APIKey
-        )
-
+        self.Client = InferenceHTTPClient(api_url="https://serverless.roboflow.com", api_key=self.APIKey)
         self.ModelID = ModelName
         self.MaxRows = MaxRows
 
@@ -131,6 +127,21 @@ class MaskMonitor:
         cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
         cv2.imshow("Mask Experiment (1 FPS)", Frame)
         return Status
+    
+    def Live(self):
+        FrameNumber = 0
+        while True:
+            FrameNumber += 1
+            Frame = self.GetFrame() 
+            Detections = self.RunInference(Frame)
+            Masked, Confidence = self.ProcessFrame(Detections)
+            Status = self.GetDisplay(Frame, Detections, Masked)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            time.sleep(1)
+            yield Masked
+        self.Release()
 
     def Run(self):
         """ Capture, call API, retrieve and display results for each frame
@@ -162,7 +173,7 @@ class MaskMonitor:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            time.sleep(0.5)
+            time.sleep(1)
 
         self.Release()
         #Writer.release()
