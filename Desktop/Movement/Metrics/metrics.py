@@ -26,12 +26,24 @@ def LogDistance(Distance, Approach, Status):
     - None
     """
     with open(DistanceLogFile, "a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            round(Distance, 2) if Distance is not None else None,
-            round(Approach, 2) if Approach is not None else None,
-            Status
-        ])
+        writer = csv.writer(f) 
+        writer.writerow([round(Distance, 2) if Distance is not None else None, round(Approach, 2) if Approach is not None else None, Status])
+
+def SafeCasting(Metric, Cast, Default):
+    """ Casting values safely in case values aren't recorded due to issue with the model
+
+    Arguments:
+    - Metric (any): Either a number from the model or string which is the status
+    - Cast (any): Either int, float, str dependent on the metrics from the model
+    - Default (any): Either 0 for numerical scores or a string for status
+
+    Returns:
+    - Metric (any) or Default (any): Returns the casted metric or the default result
+    """
+    try:
+        return Cast(Metric)
+    except:
+        return Default
 
 def LogGesture(FrameNumber, HandDetected, HandConfidence, ProximityPixel, Status):
     """ Receive the results from the frame and stores them
@@ -46,32 +58,11 @@ def LogGesture(FrameNumber, HandDetected, HandConfidence, ProximityPixel, Status
     Returns:
     - None
     """
-    try:
-        HandDetected = int(HandDetected)
-    except:
-        HandDetected = 0
-
-    try:
-        HandConfidence = float(HandConfidence)
-    except:
-        HandConfidence = 0.0
-
-    try:
-        ProximityPixel = float(ProximityPixel)
-    except:
-        ProximityPixel = 0.0
-
-    try:
-        Status = str(Status)
-    except:
-        Status = "Unknown"
+    HandDetected = SafeCasting(HandDetected, int, 0)
+    HandConfidence = SafeCasting(HandConfidence, float, 0.0)
+    ProximityPixel = SafeCasting(ProximityPixel, float, 0.0)
+    Status = SafeCasting(Status, str, "Unknown")
 
     with open(GestureLogFile, "a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            int(FrameNumber) if FrameNumber is not None else None,
-            HandDetected,
-            round(HandConfidence, 3),
-            round(ProximityPixel, 2),
-            Status
-        ])
+        writer.writerow([int(FrameNumber) if FrameNumber is not None else None, HandDetected, round(HandConfidence, 3), round(ProximityPixel, 2), Status])

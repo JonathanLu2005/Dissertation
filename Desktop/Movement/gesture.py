@@ -5,7 +5,7 @@ import time
 from Desktop.Movement.Metrics.metrics import LogGesture
 
 class GestureMonitor:
-    def __init__(self, Threshold = 120, CameraIndex=0, MaxRows=200):
+    def __init__(self, CameraIndex=0, MaxRows=200):
         """ Initalise Hand proximity model
         
         Arguments:
@@ -71,11 +71,12 @@ class GestureMonitor:
         - Frame (np.ndarray): Current frame
 
         Returns:
-        - HandDetectedFlag (int): 1 if hands detected
-        - HandPresenceScore (float): Confidence hands are detected
-        - SmoothedPixel (float): Smoothed estimate of hands pixel width
-        - Status (str): String confirming if persons too close or not
-        - Colour (tuple): RGB colour for message on screen
+        - Tuple:
+            - HandDetectedFlag (int): 1 if hands detected
+            - HandPresenceScore (float): Confidence hands are detected
+            - SmoothedPixel (float): Smoothed estimate of hands pixel width
+            - Status (str): String confirming if persons too close or not
+            - Colour (tuple): RGB colour for message on screen
         """
         RGB = cv2.cvtColor(Frame, cv2.COLOR_BGR2RGB)
         Result = self.Hands.process(RGB)
@@ -98,13 +99,47 @@ class GestureMonitor:
         SmoothedPixel = float(self.Smooth(HandWidthPixel))
 
         if SmoothedPixel >= self.Threshold and HandDetectedFlag == 1:
-            Status = "TOO_CLOSE"
+            Status = "TOO CLOSE - NOT SAFE"
             Colour = (0, 0, 255)
         else:
             Status = "SAFE"
             Colour = (0, 255, 0)
 
         return HandDetectedFlag, HandPresenceScore, SmoothedPixel, Status, Colour
+    
+    def GetDisplay(self, Status, Frame, Colour):
+        """ Shows the outcome for the current frame
+
+        Arguments:
+        - Status (str): Status of the current frame
+        - Frame (np.ndarray): Current frame captured
+        - Colour (tuple): Colour for the display
+
+        Returns:
+        - None
+        """
+        FinalStatus = f"Hand Gestures Test (Reach): {Status}"
+        cv2.putText(Frame, FinalStatus, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.65, Colour, 2)
+        cv2.imshow("Hand Gestures Test (Out of Frame)", Frame)
+
+    def Live(self):
+        """ For live implementation to constantly return the results
+
+        Returns:
+        - None
+        """
+        FrameNumber = 0
+        while True: 
+            FrameNumber += 1
+            Frame = self.GetFrame() 
+            HandDetectedFlag, HandPresenceScore, SmoothedPixel, Status, Colour = self.ProcessFrame(Frame)
+            self.GetDisplay(Status, Frame, Colour)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break   
+
+            time.sleep(1)
+            yield HandDetectedFlag==1
+        self.Release()
 
     def Run(self):
         """ Starts webcam, analyse frames, and store results in metrics
@@ -114,23 +149,29 @@ class GestureMonitor:
         """
         FrameNumber = 0
 
+        #FirstFrame = self.GetFrame()
+        #Height, Width, _ = FirstFrame.shape
+        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
+        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
+
         while FrameNumber < self.MaxRows:
             FrameNumber += 1
             Frame = self.GetFrame()
 
             HandDetectedFlag, HandPresenceScore, SmoothedPixel, Status, Colour = self.ProcessFrame(Frame)
 
-            FinalStatus = (f"{Status} | Frame={FrameNumber} | " f"Detected={HandDetectedFlag} | " f"Conf={HandPresenceScore:.2f} | WidthPx={SmoothedPixel:.1f}")
+            #FinalStatus = (f"{Status} | Frame={FrameNumber} | " f"Detected={HandDetectedFlag} | " f"Conf={HandPresenceScore:.2f} | WidthPx={SmoothedPixel:.1f}")
             LogGesture(FrameNumber, HandDetectedFlag, HandPresenceScore, SmoothedPixel, Status)
+            self.GetDisplay(Status, Frame, Colour)
 
-            cv2.putText(Frame, FinalStatus, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.65, Colour, 2)
-            cv2.imshow("Hand Proximity Detector", Frame)
+            #Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            time.sleep(0.5)
+            time.sleep(1)
 
+        #Writer.release()
         self.Release()
         return "Finished gesture monitoring."
 

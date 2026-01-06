@@ -36,7 +36,7 @@ class MetricsVisualiser:
         """
         return pd.read_csv(FilePath)
 
-    def StatusNumeric(self, Status):
+    def StatusToNumeric(self, Status):
         """ Convert arguments to 0 or 1 to visualise
         
         Arguments:
@@ -56,7 +56,7 @@ class MetricsVisualiser:
 
         return float("nan")
 
-    def PlotFile(self, Method):
+    def PlotMethod(self, Method):
         """ Given implementation, plot their performance
         
         Arguments:
@@ -71,7 +71,7 @@ class MetricsVisualiser:
             return
 
         GraphTitle = self.Methods[Method]
-        DF["StatusNumeric"] = DF["Status"].apply(self.StatusNumeric)
+        DF["StatusToNumeric"] = DF["Status"].apply(self.StatusToNumeric)
         Frames = len(DF)
         
         if Frames >= 200: 
@@ -85,7 +85,7 @@ class MetricsVisualiser:
 
         plt.figure(figsize=(14, 6))
         plt.title(f"{GraphTitle} – Gesture Detection Output", fontsize=16, weight="bold")
-        plt.plot(DF["FrameNumber"], DF["StatusNumeric"], label="Achieved", linewidth=2.2, color="tab:blue")
+        plt.plot(DF["FrameNumber"], DF["StatusToNumeric"], label="Achieved", linewidth=2.2, color="tab:blue")
         plt.plot(DF["FrameNumber"], ExpectedPlot, label="Expected", linewidth=2.4, linestyle="--", color="#AA00FF", alpha=0.8)
         plt.xlabel("Frame Number")
         plt.ylabel("Value")
@@ -104,7 +104,7 @@ class MetricsVisualiser:
         - None
         """
         for Method in self.FileNames.keys():
-            self.PlotFile(Method)
+            self.PlotMethod(Method)
 
 if __name__ == "__main__":
     GestureVisualiser = MetricsVisualiser()

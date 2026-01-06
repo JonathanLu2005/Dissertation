@@ -48,9 +48,6 @@ class MetricsVisualiser:
         Returns:
         - float: Placeholder nan value to ensure it works on the dataframe
         """
-        if not isinstance(Status, str):
-            return float("nan")
-
         Status = Status.strip().lower()
         if "safe" in Status:
             return 0

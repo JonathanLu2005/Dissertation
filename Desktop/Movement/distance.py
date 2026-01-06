@@ -156,14 +156,20 @@ class DistanceMonitor:
         Returns:
         - None
         """
-        if "TOO CLOSE" in (BoxStatus, PoseStatus):
+        if "TOO CLOSE" in BoxStatus or "TOO CLOSE" in PoseStatus:
             Colour = (0, 0, 255) 
+            BoxStatus = "DISTANCE - NOT SAFE"
         else: 
             Colour = (0, 255, 0)
+            BoxStatus = "DISTANCE - SAFE"
+
+        #Text = (
+        #    f"{BoxStatus} | {PoseStatus} | "
+        #    f"Frame {FrameNumber}/{self.MaxRows}"
+        #)
 
         Text = (
-            f"{BoxStatus} | {PoseStatus} | "
-            f"Frame {FrameNumber}/{self.MaxRows}"
+            f"Distance Test (Sitting): {BoxStatus}"
         )
 
         cv2.putText(Frame, Text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
@@ -198,7 +204,7 @@ class DistanceMonitor:
         PersonHeight = self.DetectPersonHeight(ResultsBox.boxes)
         BoxStatus, BoxAlert = self.ComputeBoxStatus(PersonHeight)
 
-        print(f"[DISTANCE] BoxHeight={PersonHeight} | TorsoWidth={TorsoMeasure}")
+        #print(f"[DISTANCE] BoxHeight={PersonHeight} | TorsoWidth={TorsoMeasure}")
 
         FinalAlert = PoseAlert or BoxAlert
 
@@ -214,18 +220,40 @@ class DistanceMonitor:
             "BoxAlert": BoxAlert,
             "FinalStatus": FinalStatus
         }
+    
+    def Live(self):
+        """ For live implementation to constantly return the results
+
+        Returns:
+        - None
+        """
+        FrameNumber = 0
+        while True:
+            FrameNumber += 1
+            Frame = self.GetFrame()
+            Results = self.ProcessFrame(Frame)
+            self.GetDisplay(Frame, Results["BoxStatus"], Results["PoseStatus"], FrameNumber)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            time.sleep(1)
+            yield Results["PoseAlert"] or Results["BoxAlert"]
+        self.release()
 
     def Run(self):
         """ Capture, process, display, and log metrics for current frame
         
         Returns:
-        - Tuple:
-            - FinalStatus (str): Message if persons too close
-            - FinalTorso (float): Measurement between shoulders
+        - str: Confirm monitoring has finished
         """
         FrameNumber = 0
         FinalStatus = "Unknown"
         FinalTorso = None
+
+        #FirstFrame = self.GetFrame()
+        #Height, Width, _ = FirstFrame.shape
+        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
+        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
 
         while FrameNumber < self.MaxRows:
             FrameNumber += 1
@@ -238,20 +266,17 @@ class DistanceMonitor:
 
             LogDistance(FinalTorso, None, FinalStatus)
 
-            self.GetDisplay(
-                Frame,
-                Results["BoxStatus"],
-                Results["PoseStatus"],
-                FrameNumber
-            )
+            self.GetDisplay(Frame, Results["BoxStatus"], Results["PoseStatus"], FrameNumber)
+            #Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
-            time.sleep(0.3)
+            time.sleep(1)
 
+        #Writer.release()
         self.Release()
-        return FinalStatus, FinalTorso
+        return "Finished distance monitoring."
 
     def Release(self):
         """ Kills camera feed
