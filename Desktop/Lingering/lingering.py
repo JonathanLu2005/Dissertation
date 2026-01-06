@@ -4,7 +4,7 @@ import mediapipe as mp
 import time
 
 class LingeringMonitor:
-    def __init__(self, LingeringThreshold=10, MaxRows=60, CameraIndex=0):
+    def __init__(self, LingeringThreshold=60, MaxRows=60, CameraIndex=0):
         """ Initialise lingering detection
 
         Arguments:
@@ -82,19 +82,59 @@ class LingeringMonitor:
             DwellTime = time.time() - self.StartTime
 
             if DwellTime >= self.LingeringThreshold:
-                Status = "LINGERING"
+                Status = "LOITERING - NOT SAFE"
                 Colour = (0, 0, 255)
             else:
-                Status = "PRESENT"
+                Status = "PRESENT - SAFE"
                 Colour = (0, 255, 0)
         else:
             self.PersonDetected = False
             self.StartTime = None
             DwellTime = 0.0
-            Status = "NO_PERSON"
-            Colour = (255, 255, 255)
+            Status = "NO PERSON"
+            Colour = (0, 255, 0)
 
         return Status, Colour, DwellTime, Confidence, BoundingBox
+    
+    def GetDisplay(self, Status, Frame, Colour):
+        """ Shows the outcome for the current frame
+
+        Arguments:
+        - Status (str): Status of the current frame
+        - Frame (np.ndarray): Current frame captured
+        - Colour (tuple): Colour for the display
+
+        Returns:
+        - bool: True if person is loitering
+        """
+        #UI = f"{Status} | Conf={Confidence:.1f} | BBox={BoundingBox:.0f} | Time={DwellTime:.1f}s | Frame={FrameNumber}/{self.MaxRows}"
+        UI = f"Loitering False Positives (Object): {Status}"
+        cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
+        cv2.imshow("Linger Experiment (1 FPS)", Frame)
+        if Colour == (0, 255, 0):
+            return False 
+        return True
+
+    def Live(self):
+        """ Live implementation for constant running of the system
+
+        Returns:
+        - None
+        """
+        FrameNumber = 0
+        while True:
+            FrameNumber += 1
+            Frame = self.GetFrame()
+            RGB = cv2.cvtColor(Frame, cv2.COLOR_BGR2RGB)
+            Result = self.Pose.process(RGB)
+            Status, Colour, DwellTime, Confidence, BoundingBox = self.ProcessFrame(Result)
+            FinalResult = self.GetDisplay(Status, Frame, Colour)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            time.sleep(1)
+            yield FinalResult
+        self.Release()
 
     def Run(self):
         """ Runs functions to retrieve current frames, run it through model, and process frame
@@ -103,6 +143,11 @@ class LingeringMonitor:
         - str: Confirm run is completed
         """
         FrameNumber = 0
+
+        #FirstFrame = self.GetFrame()
+        #Height, Width, _ = FirstFrame.shape
+        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
+        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
 
         while FrameNumber < self.MaxRows:
             FrameNumber += 1
@@ -113,9 +158,8 @@ class LingeringMonitor:
             Status, Colour, DwellTime, Confidence, BoundingBox = self.ProcessFrame(Result)
 
             LogLingering(FrameNumber, int(self.PersonDetected), Confidence, DwellTime, Status)
-            UI = f"{Status} | Conf={Confidence:.1f} | BBox={BoundingBox:.0f} | Time={DwellTime:.1f}s | Frame={FrameNumber}/{self.MaxRows}"
-            cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
-            cv2.imshow("Linger Experiment (1 FPS)", Frame)
+            FinalResult = self.GetDisplay(Status, Frame, Colour)
+            #Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -123,7 +167,8 @@ class LingeringMonitor:
             time.sleep(1)
 
         self.Release()
-        return "Experiment finished."
+        #Writer.release()
+        return "Lingering monitoring finished."
 
     def Release(self):
         """ Kills camera feed

@@ -4,8 +4,24 @@ import os
 LogFile = os.path.join(os.path.dirname(__file__), "LingeringLog.csv")
 if not os.path.exists(LogFile):
     with open(LogFile, "w", newline="") as File:
-        Writer = csv.Writer(File)
-        Writer.writerow(["FrameNumber", "PersonDetected", "Confidence", "DwellTime", "Status"])
+        writer = csv.writer(File)
+        writer.writerow(["FrameNumber", "PersonDetected", "Confidence", "DwellTime", "Status"])
+
+def SafeCasting(Metric, Cast, Default):
+    """ Casting values safely in case values aren't recorded due to issue with the model
+
+    Arguments:
+    - Metric (any): Either a number from the model or string which is the status
+    - Cast (any): Either int, float, str dependent on the metrics from the model
+    - Default (any): Either 0 for numerical scores or a string for status
+
+    Returns:
+    - Metric (any) or Default (any): Returns the casted metric or the default result
+    """
+    try:
+        return Cast(Metric)
+    except:
+        return Default
 
 def LogLingering(FrameNumber, PersonDetected, Confidence, DwellTime, Status):
     """ Stores metrics from evaluating lingering implementations
@@ -20,26 +36,11 @@ def LogLingering(FrameNumber, PersonDetected, Confidence, DwellTime, Status):
     Returns:
     - None
     """
-    try:
-        PersonDetected = int(PersonDetected)
-    except:
-        PersonDetected = 0
-
-    try:
-        Confidence = float(Confidence)
-    except:
-        Confidence = 0.0
-
-    try:
-        DwellTime = float(DwellTime)
-    except:
-        DwellTime = 0.0
-
-    try:
-        Status = str(Status)
-    except:
-        Status = "Unknown"
+    PersonDetected = SafeCasting(PersonDetected, int, 0)
+    Confidence = SafeCasting(Confidence, float, 0.0)
+    DwellTime = SafeCasting(DwellTime, float, 0.0)
+    Status = SafeCasting(Status, str, "Unknown")
 
     with open(LogFile, "a", newline="") as File:
-        Writer = csv.Writer(File)
-        Writer.writerow([int(FrameNumber) if FrameNumber is not None else None, PersonDetected, round(Confidence, 3), round(DwellTime, 2), Status])
+        writer = csv.writer(File)
+        writer.writerow([int(FrameNumber) if FrameNumber is not None else None, PersonDetected, round(Confidence, 3), round(DwellTime, 2), Status])
