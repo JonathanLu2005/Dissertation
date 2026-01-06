@@ -17,10 +17,8 @@ class MetricsVisualiser:
         self.Methods = ["KNN", "MOG2", "FLOW", "Hybrid"]
         self.Scenarios = ["Normal", "Movement", "Background", "Lighting"]
         self.Metrics = ["Motion", "SSIM", "Brightness"]
-
         self.OutputDir = "Plots"
         os.makedirs(self.OutputDir, exist_ok=True)
-
         self.Data = {}
         self.LoadData()
 
@@ -30,17 +28,17 @@ class MetricsVisualiser:
         Returns:
         - None
         """
-        for method in self.Methods:
-            for scenario in self.Scenarios:
-                file_name = f"{method} - {scenario}.csv"
-                if os.path.exists(file_name):
-                    df = pd.read_csv(file_name).head(200)
-                    self.Data[(method, scenario)] = df
+        for Method in self.Methods:
+            for Scenario in self.Scenarios:
+                FileName = f"{Method} - {Scenario}.csv"
+                if os.path.exists(FileName):
+                    DF = pd.read_csv(FileName).head(200)
+                    self.Data[(Method, Scenario)] = DF
                 else:
-                    print(f"⚠️ Missing file: {file_name}")
+                    print(f"⚠️ Missing file: {FileName}")
 
     def Plot(self, PrimaryList, SecondaryList, PrimaryLabel, SecondaryLabel, FileSuffix):
-        """ Given metrics from method and scenarios, visualise how each method/scenario performed
+        """ Given metrics from method and scenarios, visualise how each method/Scenario performed
 
         Arguments:
         - PrimaryList (list[str]): Define each figure
@@ -53,45 +51,45 @@ class MetricsVisualiser:
         - None
         """
         for PrimaryItem in PrimaryList:
-            fig, axes = plt.subplots(3, 1, figsize=(10, 10))
-            fig.suptitle(f"{PrimaryItem} {PrimaryLabel} – {SecondaryLabel}s Comparison", fontsize=16)
+            Figure, Axes = plt.subplots(3, 1, figsize=(10, 10))
+            Figure.suptitle(f"{PrimaryItem} {PrimaryLabel} – {SecondaryLabel}s Comparison", fontsize=16)
 
             for i, Metric in enumerate(self.Metrics):
-                ax = axes[i]
+                Ax = Axes[i]
                 for SecondaryItem in SecondaryList:
                     if PrimaryLabel == "Scenario":
                         Key = (SecondaryItem, PrimaryItem)
                     else:
                         Key = (PrimaryItem, SecondaryItem)
 
-                    df = self.Data.get(Key)
-                    if df is not None and Metric in df.columns:
-                        ax.plot(
-                            range(len(df)),
-                            df[Metric].rolling(5).mean(),
+                    DF = self.Data.get(Key)
+                    if DF is not None and Metric in DF.columns:
+                        Ax.plot(
+                            range(len(DF)),
+                            DF[Metric].rolling(5).mean(),
                             label=SecondaryItem,
                             linewidth=1.8,
                             alpha=0.85,
                         )
 
-                ax.set_title(Metric.capitalize(), fontsize=12)
-                ax.set_xlabel("Frame #")
-                ax.set_ylabel(Metric.capitalize())
-                ax.grid(True, linestyle="--", alpha=0.4)
-                ax.legend(fontsize=8)
-                ax.set_xlim(0, 200)
-                ax.set_xticks([0, 100, 200])
+                Ax.set_title(Metric.capitalize(), fontsize=12)
+                Ax.set_xlabel("Frame #")
+                Ax.set_ylabel(Metric.capitalize())
+                Ax.grid(True, linestyle="--", alpha=0.4)
+                Ax.legend(fontsize=8)
+                Ax.set_xlim(0, 200)
+                Ax.set_xticks([0, 100, 200])
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
             Path = os.path.join(self.OutputDir, f"{PrimaryItem}{FileSuffix}.png")
             plt.savefig(Path)
-            plt.close(fig)
+            plt.close(Figure)
 
 if __name__ == "__main__":
     Plotter = MetricsVisualiser()
 
-    # Compare each method against each scenario
+    # Compare each Method against each Scenario
     Plotter.Plot(Plotter.Scenarios, Plotter.Methods, "Scenario", "Method", "_methods")
 
-    # Compare each scenario against each method
+    # Compare each Scenario against each Method
     Plotter.Plot(Plotter.Methods, Plotter.Scenarios, "Method", "Scenario", "_scenarios")

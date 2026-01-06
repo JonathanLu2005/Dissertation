@@ -19,12 +19,6 @@ def LogMetrics(Motion, SSIMScore, Brightness):
     Returns:
     - None
     """
-
     with open(LogFile, "a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            round(Motion, 4),
-            round(SSIMScore, 4),
-            round(Brightness, 2)
-        ])
-
+        writer.writerow([round(Motion, 4), round(SSIMScore, 4), round(Brightness, 2)])

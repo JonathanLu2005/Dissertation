@@ -78,15 +78,15 @@ class BackgroundMonitor:
         Returns:
         - str: Status of background
         """
-        Status = "Normal"
+        Status = "NORMAL - SAFE"
 
         if MeanBrightness < 50:
-            return "Lighting Drop / Camera Blocked"
+            return "BLOCKED - NOT SAFE"
 
-        if 0.1 <= MotionRatio <= 0.6 and 0.45 < self.LastSSIMScore:
-            Status = "Person Movement"
-        elif MotionRatio > 0.7 or self.LastSSIMScore <= 0.45:
-            Status = "Background Changed"
+        if 0.1 <= MotionRatio <= 0.6 and 0.5 < self.LastSSIMScore:
+            Status = "MOVEMENT - SAFE"
+        elif MotionRatio > 0.7 or self.LastSSIMScore <= 0.5:
+            Status = "CHANGED - NOT SAFE"
 
         return Status
 
@@ -163,13 +163,43 @@ class BackgroundMonitor:
         - Status (str): What's detected
 
         Returns:
-        - None
+        - bool: True if background has altered
         """
-        MaskColoured = cv2.applyColorMap(FGMask, cv2.COLORMAP_JET)
-        Display = cv2.addWeighted(Frame, 0.7, MaskColoured, 0.3, 0)
-        OverlayText = f"{Status} | Frame {self.FrameCount}/10000"
-        cv2.putText(Display, OverlayText, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.imshow("Hybrid Background Monitor", Display)
+        #MaskColoured = cv2.applyColorMap(FGMask, cv2.COLORMAP_JET)
+        #Display = cv2.addWeighted(Frame, 0.7, MaskColoured, 0.3, 0)
+        #OverlayText = f"{Status} | Frame {self.FrameCount}/10000"
+        OverlayText = f"Background Test (Change): {Status}"
+
+        if "NOT SAFE" in Status:
+            Colour = (0, 0, 255)
+        else:
+            Colour = (0, 255, 0)
+
+        cv2.putText(Frame, OverlayText, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+        cv2.imshow("Hybrid Background Monitor", Frame)
+
+        if Colour == (0, 255, 0):
+            return False 
+        return True
+
+    def Live(self):
+        """ Live implementation for background changes
+
+        Returns:
+        - None 
+        """
+        FrameNumber = 0
+        while True:
+            FrameNumber += 1
+            Frame = self.GetFrame()
+            Status, FGMask, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
+            Result = self.GetDisplay(Frame, FGMask, Status)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            time.sleep(1)
+            yield Result
+        self.Release()
 
     def Run(self):
         """ Capture, process, display, and log metrics from the current frame
@@ -179,32 +209,45 @@ class BackgroundMonitor:
             - Status (str): Result of background analysis
             - MotionRatio (float): Movement score from Optical Flow
         """
-        if self.FrameCount >= self.MaxRows:
-            print("\n✅ Reached 200 logged frames — stopping monitoring.")
-            self.Release()
-            exit(0)
+        #FirstFrame = self.GetFrame()
+        #Height, Width, _ = FirstFrame.shape
+        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
+        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
 
-        Frame = self.GetFrame()
-        Status, FGMask, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
+        #if self.FrameCount >= self.MaxRows:
+        #    Writer.release()
+        #    print("\n✅ Reached 200 logged frames — stopping monitoring.")
+        #    self.Release()
+        #    exit(0)
 
-        self.FrameCount += 1
+        while self.FrameCount <= self.MaxRows:
+            Frame = self.GetFrame()
+            Status, FGMask, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
 
-        print(
-            f"[{self.FrameCount:03d}/200]  "
-            f"Motion: {MotionRatio:.3f} | SSIM: {SSIMScore:.3f} | "
-            f"Brightness: {Brightness:.1f} | "
-            f"Status: {Status}"
-        )
-        LogMetrics(MotionRatio, SSIMScore, Brightness)
+            self.FrameCount += 1
 
-        self.GetDisplay(Frame, FGMask, Status)
+            #print(
+            #    f"[{self.FrameCount:03d}/200]  "
+            #    f"Motion: {MotionRatio:.3f} | SSIM: {SSIMScore:.3f} | "
+            #    f"Brightness: {Brightness:.1f} | "
+            #    f"Status: {Status}"
+            #)
+            LogMetrics(MotionRatio, SSIMScore, Brightness)
 
-        if cv2.waitKey(1) & 0xFF == 27:
-            self.Release()
-            exit(0)
+            Result = self.GetDisplay(Frame, FGMask, Status)
 
-        time.sleep(0.3)
-        return Status, MotionRatio
+            #Writer.write(Frame)
+
+            if cv2.waitKey(1) & 0xFF == 27:
+                self.Release()
+                exit(0)
+
+            time.sleep(0.5)
+
+        #Writer.release()
+        self.Release()
+
+        return Status, MotionRatio, None
 
     def Release(self):
         """ Kills camera feed
@@ -212,5 +255,5 @@ class BackgroundMonitor:
         Returns:
         - None
         """
-        self.Cap.Release()
+        self.Cap.release()
         cv2.destroyAllWindows()
