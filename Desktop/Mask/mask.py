@@ -129,6 +129,11 @@ class MaskMonitor:
         return Status
     
     def Live(self):
+        """ For live implementation to constantly return the results
+
+        Returns:
+        - None
+        """
         FrameNumber = 0
         while True:
             FrameNumber += 1
@@ -177,7 +182,7 @@ class MaskMonitor:
 
         self.Release()
         #Writer.release()
-        return Status, Confidence, None
+        return "Mask monitoring finished."
 
     def Release(self):
         """ Kills camera feed

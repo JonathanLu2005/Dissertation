@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-class MaskMetricsVisualiser:
+class MetricsVisualiser:
     def __init__(self):
         """ Initiates method names and file to store method comparisons
 
@@ -101,5 +101,5 @@ class MaskMetricsVisualiser:
             self.PlotMethod(Method)
 
 if __name__ == "__main__":
-    MaskVisualiser = MaskMetricsVisualiser()
+    MaskVisualiser = MetricsVisualiser()
     MaskVisualiser.GeneratePlots()
