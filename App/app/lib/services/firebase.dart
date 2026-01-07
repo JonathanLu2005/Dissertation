@@ -7,8 +7,8 @@ class FirebaseService {
   Stream<Map<String, dynamic>> listenToBackend(
       {Duration interval = const Duration(seconds: 3)}) async* {
     while (true) {
-      final transmission = await _database.child("BackendMessages").get();
-      final transmissionData = transmission.value as Map?;
+      final snapshot = await _database.child("BackendMessages").get();
+      final transmissionData = snapshot.value as Map?;
 
       yield {
         "alert": transmissionData?["Alert"] == true,
@@ -17,6 +17,16 @@ class FirebaseService {
 
       await Future.delayed(interval);
     }
+  }
+
+  Stream<Map<String, dynamic>> listenToSettings() {
+    return FirebaseDatabase.instance.ref("UserSettings/app").onValue.map((event) {
+      final transmissionData = event.snapshot.value as Map?;
+      return {
+        "enabled": transmissionData?["enabled"] == true,
+        "volume": (transmissionData?["volume"] ?? 1.0).toDouble(),
+      };
+    });
   }
 
   Future<void> sendToBackend(String message) async {

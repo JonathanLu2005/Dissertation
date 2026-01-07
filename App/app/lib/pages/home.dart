@@ -18,16 +18,27 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription? subscription;
   bool receivedAlert = false;
   String receivedMessage = "—";
+  StreamSubscription? settingsSubscription;
+  bool alertsEnabled = true; 
+  double alertVolume = 1.0;
 
   @override
   void initState() {
     super.initState();
 
+    settingsSubscription = firebase.listenToSettings().listen((settings) {
+      setState(() {
+        alertsEnabled = settings["enabled"];
+        alertVolume = settings["volume"];
+      });
+    });
+
     subscription = firebase.listenToBackend().listen((transmissionData) async {
       final bool alert = transmissionData["alert"];
       final String message = transmissionData["message"];
 
-      if (alert && !receivedAlert) {
+      if (alert && !receivedAlert && alertsEnabled) {
+        await player.setVolume(alertVolume);
         await player.play(AssetSource("alert.mp3"));
       }
 
@@ -41,6 +52,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     subscription?.cancel();
+    settingsSubscription?.cancel();
     player.dispose();
     super.dispose();
   }
