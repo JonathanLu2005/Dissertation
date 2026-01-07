@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv 
 from pathlib import Path
 from Desktop.Main.main import main
+import winsound
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -23,12 +24,17 @@ def Firebase():
 
     while True:
         for Result in main():
+            Message = "No suspicious activity detected"
             if Result:
-                BackendReference.set("Suspicious activity detected")
-                print("Sent to App")
-            else:
-                BackendReference.set("No suspicious activity detected")
-                print("Sent to App")
+                winsound.Beep(1500, 500)
+                Message = "Suspicious activity detected"
+
+            BackendReference.set({
+                "Alert": Result,
+                "Message": Message
+            })
+
+            print("Sent to App")
 
         #Message = AppReference.get()
         #print(f"{Message} from App")

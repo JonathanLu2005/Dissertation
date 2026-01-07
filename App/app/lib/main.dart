@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,8 @@ class _MyAppState extends State<MyApp> {
   late DatabaseReference db;
   String sentMessage = "—";
   String receivedMessage = "—";
+  bool receivedAlert = false;
+  final AudioPlayer player = AudioPlayer();
 
   @override
   void initState() {
@@ -30,11 +33,18 @@ class _MyAppState extends State<MyApp> {
       const message = "Hello from Flutter";
       await db.child("AppMessages").set(message);
 
-      final snapshot = await db.child("BackendMessages").get();
+      final transmission = await db.child("BackendMessages").get();
+      final transmissionData = transmission.value as Map?;
+
+      final bool currentAlert = transmissionData?["Alert"] == true;
+
+      if (currentAlert && !receivedAlert) {
+        await player.play(AssetSource("alert.mp3"));
+      }
 
       setState(() {
-        sentMessage = message;
-        receivedMessage = snapshot.value?.toString() ?? "null";
+        receivedMessage = transmissionData?["Message"]?.toString() ?? "-";
+        receivedAlert = currentAlert;
       });
     });
   }
@@ -48,11 +58,12 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text("Sent to backend:", style: Theme.of(context).textTheme.titleMedium),
-              Text(sentMessage, style: const TextStyle(fontSize: 18)),
-              const SizedBox(height: 20),
-              Text("Received from backend:", style: Theme.of(context).textTheme.titleMedium),
-              Text(receivedMessage, style: const TextStyle(fontSize: 18)),
+              //Text("Sent to backend:", style: Theme.of(context).textTheme.titleMedium),
+              //Text(sentMessage, style: const TextStyle(fontSize: 18)),
+              //const SizedBox(height: 20),
+              //Text("Received from backend:", style: Theme.of(context).textTheme.titleMedium),
+              //Text(receivedMessage, style: const TextStyle(fontSize: 18)),
+              Text(receivedMessage, style: TextStyle(fontSize: 18)),
             ],
           ),
         ),
