@@ -4,6 +4,7 @@ from firebase_admin import credentials, db
 import os 
 from dotenv import load_dotenv 
 from pathlib import Path
+from Desktop.Main.main import main
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -21,11 +22,16 @@ def Firebase():
     AppReference = db.reference("AppMessages")
 
     while True:
-        BackendReference.set("Hello from Python")
-        print("Sent to App")
+        for Result in main():
+            if Result:
+                BackendReference.set("Suspicious activity detected")
+                print("Sent to App")
+            else:
+                BackendReference.set("No suspicious activity detected")
+                print("Sent to App")
 
-        Message = AppReference.get()
-        print(f"{Message} from App")
+        #Message = AppReference.get()
+        #print(f"{Message} from App")
 
         time.sleep(3)
 

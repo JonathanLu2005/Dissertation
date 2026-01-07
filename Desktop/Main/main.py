@@ -11,9 +11,9 @@ def main():
     - None
     """
     #Monitor = lingering.LingeringMonitor()
-    #Monitor = distance.DistanceMonitor()
+    Monitor = distance.DistanceMonitor()
     #Monitor = gesture.GestureMonitor()
-    Monitor = background.BackgroundMonitor()
+    #Monitor = background.BackgroundMonitor()
     #Monitor = mask.MaskMonitor()
 
     try:
@@ -21,6 +21,7 @@ def main():
         for Result in Monitor.Live():
             print(Result)
             time.sleep(1)
+            yield Result
 
         # Test
         #while True:
