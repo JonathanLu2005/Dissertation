@@ -11,7 +11,7 @@ class NotificationSettingsPage extends StatefulWidget {
 }
 
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
-  final db = FirebaseDatabase.instance.ref("UserSettings");
+  final database = FirebaseDatabase.instance.ref("AlertSettings");
 
   bool appEnabled = true;
   double appVolume = 0.8;
@@ -19,14 +19,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   double laptopVolume = 1.0;
 
   void save() {
-    db.set({
-      "app": {
-        "enabled": appEnabled,
-        "volume": appVolume,
+    database.set({
+      "App": {
+        "Enabled": appEnabled,
+        "Volume": appVolume,
       },
-      "laptop": {
-        "enabled": laptopEnabled,
-        "volume": laptopVolume,
+      "Laptop": {
+        "Enabled": laptopEnabled,
+        "Volume": laptopVolume,
       }
     });
   }

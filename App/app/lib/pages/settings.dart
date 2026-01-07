@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/navigation.dart';
 import '../widgets/tiles.dart';
 import '../pages/notificationSettings.dart';
+import '../pages/modelSettings.dart';
 
 class SettingsPage extends StatelessWidget { 
   const SettingsPage({super.key}); 
@@ -18,6 +19,17 @@ class SettingsPage extends StatelessWidget {
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           children: [
+            Tiles(
+              icon: Icons.laptop,
+              label: "Model",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ModelSettingsPage(),),
+                );
+              },
+            ),
+
             Tiles(
               icon: Icons.notifications,
               label: "Alerts",

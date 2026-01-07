@@ -20,14 +20,14 @@ def Firebase():
     FirebaseID = os.getenv("FIREBASE_PROJECT_ID")
     firebase_admin.initialize_app(Credentials, {"databaseURL": f"https://{FirebaseID}-default-rtdb.europe-west1.firebasedatabase.app"})
     BackendReference = db.reference("BackendMessages")
-    AlertReference = db.reference("UserSettings/laptop")
+    AlertReference = db.reference("AlertSettings/Laptop")
     AppReference = db.reference("AppMessages")
 
     while True:
         for Result in main():
             AlertSettings = AlertReference.get() or {}
-            AlertsEnabled = AlertSettings.get("enabled", True)
-            AlertsVolume = float(AlertSettings.get("volume", 1.0))
+            AlertsEnabled = AlertSettings.get("Enabled", True)
+            AlertsVolume = float(AlertSettings.get("Volume", 1.0))
             Message = "No suspicious activity detected"
 
             if Result and AlertsEnabled:
