@@ -1,8 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'pages/home.dart';
+import 'pages/settings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,64 +9,17 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  late DatabaseReference db;
-  String sentMessage = "—";
-  String receivedMessage = "—";
-  bool receivedAlert = false;
-  final AudioPlayer player = AudioPlayer();
-
-  @override
-  void initState() {
-    super.initState();
-    db = FirebaseDatabase.instance.ref();
-
-    Timer.periodic(const Duration(seconds: 3), (_) async {
-      const message = "Hello from Flutter";
-      await db.child("AppMessages").set(message);
-
-      final transmission = await db.child("BackendMessages").get();
-      final transmissionData = transmission.value as Map?;
-
-      final bool currentAlert = transmissionData?["Alert"] == true;
-
-      if (currentAlert && !receivedAlert) {
-        await player.play(AssetSource("alert.mp3"));
-      }
-
-      setState(() {
-        receivedMessage = transmissionData?["Message"]?.toString() ?? "-";
-        receivedAlert = currentAlert;
-      });
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text("Initial App")),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              //Text("Sent to backend:", style: Theme.of(context).textTheme.titleMedium),
-              //Text(sentMessage, style: const TextStyle(fontSize: 18)),
-              //const SizedBox(height: 20),
-              //Text("Received from backend:", style: Theme.of(context).textTheme.titleMedium),
-              //Text(receivedMessage, style: const TextStyle(fontSize: 18)),
-              Text(receivedMessage, style: TextStyle(fontSize: 18)),
-            ],
-          ),
-        ),
-      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomePage(), 
+        '/settings': (context) => const SettingsPage(),
+      },
     );
   }
 }

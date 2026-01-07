@@ -1,0 +1,37 @@
+import 'package:flutter/material.dart';
+
+class AppNavigationBar extends StatelessWidget {
+  final int currentPage;
+  const AppNavigationBar({super.key, required this.currentPage});
+
+  void _onClick(BuildContext context, int receivedPage) {
+    if (receivedPage == currentPage) return;
+
+    switch (receivedPage) {
+      case 0:
+        Navigator.pushReplacementNamed(context, "/");
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, "/settings");
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: currentPage,
+      onTap: (i) => _onClick(context, i),
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: "Home",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: "Settings",
+        ),
+      ],
+    );
+  }
+}
