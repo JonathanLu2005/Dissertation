@@ -2,19 +2,24 @@ from Desktop.Background import background
 from Desktop.Movement import distance, gesture
 from Desktop.Lingering import lingering
 from Desktop.Mask import mask
+from Desktop.Keyboard import keyboardMonitor
+from Desktop.USB import USB
 import time
 
-def main():
+def Main():
     """ Calls computer vision components
     
     Returns:
     - None
     """
     #Monitor = lingering.LingeringMonitor()
-    Monitor = distance.DistanceMonitor()
+    #Monitor = distance.DistanceMonitor()
     #Monitor = gesture.GestureMonitor()
     #Monitor = background.BackgroundMonitor()
     #Monitor = mask.MaskMonitor()
+    #Monitor = keyboardMonitor.KeyboardMonitor()
+    Monitor = USB.USBMonitor()
+    
 
     try:
         # Live
@@ -33,4 +38,5 @@ def main():
         Monitor.Release()
 
 if __name__ == "__main__":
-    main()
+    for _ in Main():
+        pass
