@@ -28,14 +28,14 @@ class _HomePageState extends State<HomePage> {
 
     settingsSubscription = firebase.listenToSettings().listen((settings) {
       setState(() {
-        alertsEnabled = settings["Enabled"];
-        alertVolume = settings["Volume"];
+        alertsEnabled = settings["enabled"] as bool? ?? true;
+        alertVolume = (settings["volume"] as num?)?.toDouble() ?? 1.0;
       });
     });
 
     subscription = firebase.listenToBackend().listen((transmissionData) async {
-      final bool alert = transmissionData["Alert"];
-      final String message = transmissionData["Message"];
+      final bool alert = transmissionData["alert"] as bool? ?? false;
+      final String message = transmissionData["message"] as String? ?? "-";
 
       if (alert && !receivedAlert && alertsEnabled) {
         await player.setVolume(alertVolume);

@@ -4,7 +4,7 @@ from firebase_admin import credentials, db
 import os 
 from dotenv import load_dotenv 
 from pathlib import Path
-from Desktop.Main.main import main
+from Desktop.Main.main import Main
 import winsound
 
 def Firebase():
@@ -24,10 +24,10 @@ def Firebase():
     AppReference = db.reference("AppMessages")
 
     while True:
-        for Result in main():
+        for Result in Main():
             AlertSettings = AlertReference.get() or {}
-            AlertsEnabled = AlertSettings.get("Enabled", True)
-            AlertsVolume = float(AlertSettings.get("Volume", 1.0))
+            AlertsEnabled = AlertSettings.get("enabled", True)
+            AlertsVolume = float(AlertSettings.get("volume", 1.0))
             Message = "No suspicious activity detected"
 
             if Result and AlertsEnabled:
@@ -40,10 +40,6 @@ def Firebase():
             })
 
             print("Sent to App")
-
-        #Message = AppReference.get()
-        #print(f"{Message} from App")
-
         time.sleep(3)
 
 Firebase()
