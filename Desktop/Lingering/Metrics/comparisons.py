@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from matplotlib.patches import Patch
 
 class MetricsVisualiser:
     def __init__(self):
@@ -16,7 +17,7 @@ class MetricsVisualiser:
         - None
         """
         self.Methods = {
-            "BLOB": "Binary Large Object",
+            "BLOB": "Background Subtraction",
             "HS": "Human Segmentation",
             "PE": "Pose Estimation"
         }
@@ -71,7 +72,7 @@ class MetricsVisualiser:
             Expected[10:10 + 50] = 1
         return Expected
 
-    def PlotScenario(self, DF, Scenario, Ax):
+    def PlotScenario(self, DF, Scenario, Ax, Title):
         """ Plots method performance for a given scenario
 
         Arguments:
@@ -92,12 +93,10 @@ class MetricsVisualiser:
             Ax.plot(Seconds, Expected + 0.05, linestyle="--", linewidth=2, color="#AA00FF", alpha=0.6, label="Expected")
 
         Ax.plot(Seconds, DF["StatusNumeric"], linewidth=2, alpha=0.9, label="Achieved", color="tab:blue")
-
         NoPersonMask = DF["Status"].str.lower().str.contains("no", na=False)
         for i in np.where(NoPersonMask)[0]:
             Time = Seconds.iloc[i]
             Ax.axvspan(Time - 0.5, Time + 0.5, color="red", alpha=0.12)
-
         PresentMask = DF["PersonDetected"] == 1
         if PresentMask.any():
             Segments = np.where(PresentMask)[0]
@@ -108,12 +107,14 @@ class MetricsVisualiser:
                     Start = Segments[i]
             Ax.hlines(-0.2, DF["FrameNumber"].iloc[Start], DF["FrameNumber"].iloc[Segments[-1]], linewidth=5, color="black")
 
-        Ax.set_title(Scenario, fontsize=13, weight="bold")
+        Ax.set_title(Title, fontsize=13, weight="bold")
         Ax.set_ylabel("Status")
         Ax.set_yticks([0, 1])
-        Ax.set_yticklabels(["Present (0)", "Lingering (1)"])
+        Ax.set_yticklabels(["Present (0)", "Loitering (1)"])
         Ax.grid(True, linestyle="--", alpha=0.4)
-        Ax.legend(loc="upper right", fontsize=8)
+        Handles, Labels = Ax.get_legend_handles_labels()
+        Handles.append(Patch(color="red", alpha=0.12, label="Undetected"))
+        Ax.legend(handles=Handles, loc="upper right", fontsize=8)
 
     def PlotMethod(self, Method):
         """ Plot all methods and their performance against each scenarios
@@ -124,12 +125,14 @@ class MetricsVisualiser:
         Returns:
         - None
         """
-        Figure, Axes = plt.subplots(5, 1, figsize=(14, 14))
-        Figure.suptitle(f"{self.Methods[Method]} – Lingering Behaviour", fontsize=18, weight="bold")
+        ScenariosToPlot = [Scenario for Scenario in self.Scenarios if Scenario != "Behind"]
+        Figure, Axes = plt.subplots(len(ScenariosToPlot), 1, figsize=(14, 14))
+        Figure.suptitle(f"{self.Methods[Method]} Loitering Detection", fontsize=18, weight="bold")
 
-        for i, Scenario in enumerate(self.Scenarios):
+        for i, Scenario in enumerate(ScenariosToPlot): 
             DF = self.LoadCSV(Method, Scenario)
-            self.PlotScenario(DF, Scenario, Axes[i])
+            SubTitle = f"{self.Methods[Method]} With {Scenario}"
+            self.PlotScenario(DF, Scenario, Axes[i], SubTitle)
             Axes[i].set_xlabel("Time (seconds)")
 
         plt.tight_layout(rect=[0, 0, 1, 0.97])

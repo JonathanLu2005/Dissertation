@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+from matplotlib.patches import Patch
 
 class MetricsVisualiser:
     def __init__(self):
@@ -18,8 +19,8 @@ class MetricsVisualiser:
         self.Methods = {
             "BPP": "Bounding Box",
             "FDE": "Face Distance Estimation",
-            "Hybrid": "Hybrid",
-            "PD": "Pose Distance"
+            "Hybrid": "Pose Estimation and Bounding Box",
+            "PD": "Pose Estimation"
         }
 
         self.Scenarios = ["Standing", "Sitting", "Crouch"]
@@ -98,11 +99,11 @@ class MetricsVisualiser:
         Ax.set_yticks([0, 1])
         Ax.set_yticklabels(["Safe (0)", "Too Close (1)"])
         Ax.grid(True, linestyle="--", alpha=0.4)
-
-        if Index == 2:
-            Ax.set_xlabel("Frame #")
-
-        Ax.legend(loc="upper right", fontsize=8)
+        Ax.set_xlabel("Time (seconds)")
+        UndetectedProxy = Patch(color="red", alpha=0.12, label="Undetected")
+        Handles, labels = Ax.get_legend_handles_labels()
+        Handles.append(UndetectedProxy)
+        Ax.legend(handles=Handles, loc="upper right", fontsize=8)
 
     def PlotMethodAllScenarios(self, Method):
         """ Plots the method and all scenarios and how it performed
@@ -114,14 +115,14 @@ class MetricsVisualiser:
         - None
         """
         Figure, Axes = plt.subplots(3, 1, figsize=(12, 10))
-        Figure.suptitle(f"{self.Methods[Method]} – Real Detection Output", fontsize=16, weight="bold")
+        Figure.suptitle(f"{self.Methods[Method]} Proximity Detection", fontsize=16, weight="bold")
 
         for i, Scenario in enumerate(self.Scenarios):
             DF = self.LoadCSV(Method, Scenario)
             Ax = Axes[i]
             self.PlotSingleScenario(DF, Scenario, Ax, i)
 
-        plt.tight_layout([0, 0, 1, 0.96])
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
         FileName = os.path.join(self.OutputDirectory, f"{Method}_ALL.png")
         plt.savefig(FileName)
         plt.close()

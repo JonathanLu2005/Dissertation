@@ -15,9 +15,9 @@ class MetricsVisualiser:
         - None
         """
         self.Methods = {
-            "FOD": "Face and Object Detection",
-            "OD": "Object Detection",
-            "O": "Occlusion"
+            "FOD": "Two Stage Pipeline",
+            "OD": "Single Stage Detector",
+            "O": "Occlusion Based"
         }
 
         self.OutputDirectory = "Plots"
@@ -32,7 +32,7 @@ class MetricsVisualiser:
         Returns:
         - pd.DataFrame: Implemetation metrics csv
         """
-        return pd.read_csv(f"{Method} - MaskLog.csv")
+        return pd.read_csv(f"{self.Methods[Method]} MaskLog.csv")
 
     def StatusToNumeric(self, Status):
         """ Convert status to binary to signal if mask was detected or not, to plot
@@ -70,10 +70,10 @@ class MetricsVisualiser:
         Expected[60:] = 1
 
         plt.figure(figsize=(14, 5))
-        plt.title(f"{self.Methods[Method]} – Mask Detection", fontsize=16, weight="bold")
-
+        plt.title(f"{self.Methods[Method]} Mask Detection", fontsize=16, weight="bold")
         plt.plot(Time, Expected + 0.05, linestyle="--", linewidth=2, color="#AA00FF", alpha=0.6, label="Expected")
         plt.plot(Time, DF["StatusNumeric"], linewidth=2, color="tab:blue", alpha=0.9, label="Achieved")
+        plt.axvspan(0, 0, color="red", alpha=0.12, label="Undetected")
 
         NoDetection = DF["Status"].str.lower().str.contains("no detection", na=False)
         for i in np.where(NoDetection)[0]:

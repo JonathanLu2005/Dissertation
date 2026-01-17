@@ -15,8 +15,9 @@ class MetricsVisualiser:
         - None
         """
         self.Methods = ["KNN", "MOG2", "FLOW", "Hybrid"]
+        self.Keys = {"KNN": "KNN Background Subtraction", "MOG2": "MOG2 Background Subtraction", "FLOW": "Optical Flow", "Hybrid": "KNN and Optical Flow"}
         self.Scenarios = ["Normal", "Movement", "Background", "Lighting"]
-        self.Metrics = ["Motion", "SSIM", "Brightness"]
+        self.Metrics = ["motion", "ssim", "brightness"]
         self.OutputDir = "Plots"
         os.makedirs(self.OutputDir, exist_ok=True)
         self.Data = {}
@@ -52,7 +53,10 @@ class MetricsVisualiser:
         """
         for PrimaryItem in PrimaryList:
             Figure, Axes = plt.subplots(3, 1, figsize=(10, 10))
-            Figure.suptitle(f"{PrimaryItem} {PrimaryLabel} – {SecondaryLabel}s Comparison", fontsize=16)
+            if PrimaryItem in self.Keys:
+                Figure.suptitle(f"{self.Keys[PrimaryItem]} Background Change Detection", fontsize=16)
+            else:
+                Figure.suptitle(f"{PrimaryItem} Background Change Detection", fontsize=16)
 
             for i, Metric in enumerate(self.Metrics):
                 Ax = Axes[i]
@@ -73,12 +77,12 @@ class MetricsVisualiser:
                         )
 
                 Ax.set_title(Metric.capitalize(), fontsize=12)
-                Ax.set_xlabel("Frame #")
+                Ax.set_xlabel("Time (seconds)")
                 Ax.set_ylabel(Metric.capitalize())
                 Ax.grid(True, linestyle="--", alpha=0.4)
                 Ax.legend(fontsize=8)
                 Ax.set_xlim(0, 200)
-                Ax.set_xticks([0, 100, 200])
+                Ax.set_xticks(range(0, 201, 25))
 
             plt.tight_layout(rect=[0, 0, 1, 0.96])
             Path = os.path.join(self.OutputDir, f"{PrimaryItem}{FileSuffix}.png")
