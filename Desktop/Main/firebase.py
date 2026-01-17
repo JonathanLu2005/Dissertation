@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from Desktop.Main.main import Main
 import winsound
+import cv2
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -22,6 +23,11 @@ def Firebase():
     BackendReference = db.reference("BackendMessages")
     AlertReference = db.reference("AlertSettings/Laptop")
     AppReference = db.reference("AppMessages")
+
+    ImagePath = os.path.join(BaseDirectory, "Warning.png")
+    Warning = cv2.imread(ImagePath)
+    cv2.imshow("Warning", Warning)
+    cv2.waitKey(1)
 
     while True:
         for Result in Main():
