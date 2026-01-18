@@ -7,6 +7,7 @@ from pathlib import Path
 from Desktop.Main.main import Main
 import winsound
 import cv2
+import ctypes
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -28,6 +29,8 @@ def Firebase():
     Warning = cv2.imread(ImagePath)
     cv2.imshow("Warning", Warning)
     cv2.waitKey(1)
+
+    ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
 
     while True:
         for Result in Main():
