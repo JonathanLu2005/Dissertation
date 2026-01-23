@@ -36,6 +36,7 @@ def Firebase():
     while True:
         ControlPanelResults = ControlPanel.get() or {}
         PowerOn = ControlPanelResults.get("Power", False)
+        LockOn = ControlPanelResults.get("Lock", False)
 
         AlertSettings = AlertReference.get() or {}
         AlertsEnabled = AlertSettings.get("enabled", True)
@@ -43,6 +44,9 @@ def Firebase():
 
         Result = False
         Message = "Powered off"
+
+        if LockOn:
+            ctypes.windll.user32.LockWorkStation()
 
         if PowerOn:
             Message = "No suspicious activity detected"

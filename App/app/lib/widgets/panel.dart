@@ -11,11 +11,19 @@ class ControlPanel extends StatefulWidget {
 
 class ControlPanelState extends State<ControlPanel> {
   bool powerOn = false;
-  final database = FirebaseDatabase.instance.ref("RemoteControl/Power");
+  final databasePower = FirebaseDatabase.instance.ref("RemoteControl/Power");
+
+  bool lockOn = false;
+  final databaseLock = FirebaseDatabase.instance.ref("RemoteControl/Lock");
 
   void togglePower() {
     setState(() => powerOn = !powerOn);
-    database.set(powerOn);
+    databasePower.set(powerOn);
+  }
+
+  void toggleLock() {
+    setState(() => lockOn = !lockOn);
+    databaseLock.set(lockOn);
   }
 
   @override
@@ -29,6 +37,11 @@ class ControlPanelState extends State<ControlPanel> {
             icon: Icons.power_settings_new, 
             onPressed: togglePower,
             isOn: powerOn,
+          ),
+          ControlButton(
+            icon: Icons.lock,
+            onPressed: toggleLock,
+            isOn: lockOn,
           ),
         ],
       )
