@@ -11,8 +11,8 @@ class FirebaseService {
       final transmissionData = snapshot.value as Map?;
 
       yield {
-        "alert": transmissionData?["Alert"] == true,
-        "message": transmissionData?["Message"]?.toString() ?? "—",
+        "alert": transmissionData?["alert"] == true,
+        "message": transmissionData?["message"]?.toString() ?? "—",
       };
 
       await Future.delayed(interval);
@@ -23,8 +23,8 @@ class FirebaseService {
     return FirebaseDatabase.instance.ref("AlertSettings/App").onValue.map((event) {
       final transmissionData = event.snapshot.value as Map?;
       return {
-        "enabled": transmissionData?["Enabled"] == true,
-        "volume": (transmissionData?["Volume"] ?? 1.0).toDouble(),
+        "enabled": transmissionData?["enabled"] == true,
+        "volume": (transmissionData?["volume"] ?? 1.0).toDouble(),
       };
     });
   }

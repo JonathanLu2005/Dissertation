@@ -3,6 +3,7 @@ import '../widgets/navigation.dart';
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase.dart';
+import '../widgets/panel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -62,8 +63,18 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Status")),
       bottomNavigationBar: const AppNavigationBar(currentPage: 0),
-      body: Center(
-        child: Text(receivedMessage, style: const TextStyle(fontSize: 18),),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: Text(
+                receivedMessage,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+          const ControlPanel(),
+        ],
       ),
     );
   }

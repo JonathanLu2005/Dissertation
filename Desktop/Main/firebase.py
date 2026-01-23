@@ -24,6 +24,7 @@ def Firebase():
     BackendReference = db.reference("BackendMessages")
     AlertReference = db.reference("AlertSettings/Laptop")
     AppReference = db.reference("AppMessages")
+    ControlPanel = db.reference("RemoteControl")
 
     ImagePath = os.path.join(BaseDirectory, "Warning.png")
     Warning = cv2.imread(ImagePath)
@@ -33,22 +34,33 @@ def Firebase():
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
 
     while True:
-        for Result in Main():
-            AlertSettings = AlertReference.get() or {}
-            AlertsEnabled = AlertSettings.get("enabled", True)
-            AlertsVolume = float(AlertSettings.get("volume", 1.0))
+        ControlPanelResults = ControlPanel.get() or {}
+        PowerOn = ControlPanelResults.get("Power", False)
+
+        AlertSettings = AlertReference.get() or {}
+        AlertsEnabled = AlertSettings.get("enabled", True)
+        AlertsVolume = float(AlertSettings.get("volume", 1.0))
+
+        Result = False
+        Message = "Powered off"
+
+        if PowerOn:
             Message = "No suspicious activity detected"
+
+            for Result in Main():
+                break 
 
             if Result and AlertsEnabled:
                 winsound.Beep(1500, int(500 * AlertsVolume))
                 Message = "Suspicious activity detected"
 
-            BackendReference.set({
-                "Alert": Result,
-                "Message": Message
-            })
+        BackendReference.set({
+            "alert": Result,
+            "message": Message
+        })
 
-            print("Sent to App")
+        print("Sent:", Message)
         time.sleep(3)
+
 
 Firebase()
