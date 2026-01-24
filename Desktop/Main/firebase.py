@@ -8,6 +8,21 @@ from Desktop.Main.main import Main
 import winsound
 import cv2
 import ctypes
+import asyncio
+from winrt.windows.devices.geolocation import Geolocator 
+
+async def GetLocation():
+    """ Retrieve laptop longitude and latitude coordinates
+
+    Returns:
+    - (float): Latitude value
+    - (float): Longitude value
+    """
+    Location = Geolocator()
+    Location.desired_accuracy_in_meters = 50
+    Position = await Location.get_geoposition_async()
+    Coordinates = Position.coordinate.point.position 
+    return Coordinates.latitude, Coordinates.longitude
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -24,6 +39,7 @@ def Firebase():
     BackendReference = db.reference("BackendMessages")
     AlertReference = db.reference("AlertSettings/Laptop")
     AppReference = db.reference("AppMessages")
+    LocationReference = db.reference("LaptopLocation")
     ControlPanel = db.reference("RemoteControl")
 
     ImagePath = os.path.join(BaseDirectory, "Warning.png")
@@ -44,6 +60,13 @@ def Firebase():
 
         Result = False
         Message = "Powered off"
+
+        Latitude, Longitude = asyncio.run(GetLocation())
+        Location = {
+            "latitude": Latitude,
+            "longitude": Longitude,
+        }
+        LocationReference.set(Location)
 
         if LockOn:
             ctypes.windll.user32.LockWorkStation()

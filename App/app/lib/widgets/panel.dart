@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'controlButton.dart';
 import 'package:firebase_database/firebase_database.dart';
+import '../services/map.dart';
 
 class ControlPanel extends StatefulWidget {
   const ControlPanel({super.key});
@@ -26,6 +27,14 @@ class ControlPanelState extends State<ControlPanel> {
     databaseLock.set(lockOn);
   }
 
+  void showMap() {
+    showModalBottomSheet(  
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const TrackLocation(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,6 +52,11 @@ class ControlPanelState extends State<ControlPanel> {
             onPressed: toggleLock,
             isOn: lockOn,
           ),
+          ControlButton( 
+            icon: Icons.map,
+            onPressed: showMap,
+            isOn: false,
+          )
         ],
       )
     );
