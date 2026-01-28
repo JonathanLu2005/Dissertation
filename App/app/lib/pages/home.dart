@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase.dart';
 import '../widgets/panel.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,6 +16,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final FirebaseService firebase = FirebaseService();
   final AudioPlayer player = AudioPlayer();
+  final backendDatabase = FirebaseDatabase.instance.ref("BackendMessages");
 
   StreamSubscription? subscription;
   bool receivedAlert = false;
@@ -22,6 +24,37 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription? settingsSubscription;
   bool alertsEnabled = true; 
   double alertVolume = 1.0;
+  bool powerOn = false;
+  Timer? timeCheck;
+  DateTime? lastTimeCheck;
+
+  Future<void> alarm() async {
+    await player.setVolume(alertVolume);
+    await player.play(AssetSource("alert.mp3"));
+  }
+
+  void checkConnection(Timer time) {
+    if (lastTimeCheck == null) return;
+
+    final current = DateTime.now();
+    final difference = (current.difference(lastTimeCheck!)).inSeconds;
+    
+    if (difference > 20) {
+      if (mounted) {
+        setState(() {
+          receivedMessage = "Backend isn't connected";
+        });
+      }
+
+      backendDatabase.update({
+        "message": receivedMessage
+      });
+
+      if (powerOn && alertsEnabled) {
+        alarm();
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -37,10 +70,14 @@ class _HomePageState extends State<HomePage> {
     subscription = firebase.listenToBackend().listen((transmissionData) async {
       final bool alert = transmissionData["alert"] as bool? ?? false;
       final String message = transmissionData["message"] as String? ?? "-";
+      final int? messageTimestamp = transmissionData["timestamp"] as int?;
 
-      if (alert && !receivedAlert && alertsEnabled) {
-        await player.setVolume(alertVolume);
-        await player.play(AssetSource("alert.mp3"));
+      if (messageTimestamp != null) {
+        lastTimeCheck = DateTime.fromMillisecondsSinceEpoch(messageTimestamp * 1000);
+      }
+
+      if (alert && !receivedAlert && alertsEnabled && powerOn) {
+        alarm();
       }
 
       setState(() {
@@ -48,12 +85,15 @@ class _HomePageState extends State<HomePage> {
         receivedMessage = message;
       });
     });
+
+    timeCheck = Timer.periodic(const Duration(seconds: 1), checkConnection);
   }
 
   @override
   void dispose() {
     subscription?.cancel();
     settingsSubscription?.cancel();
+    timeCheck?.cancel();
     player.dispose();
     super.dispose();
   }

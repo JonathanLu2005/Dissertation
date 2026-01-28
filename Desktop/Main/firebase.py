@@ -1,6 +1,6 @@
 import time 
 import firebase_admin 
-from firebase_admin import credentials, db 
+from firebase_admin import credentials, db, storage
 import os 
 from dotenv import load_dotenv 
 from pathlib import Path
@@ -35,7 +35,9 @@ def Firebase():
     Credentials = credentials.Certificate(CredentialsPath)
     load_dotenv(Path(__file__).resolve().parents[2]/".env")
     FirebaseID = os.getenv("FIREBASE_PROJECT_ID")
-    firebase_admin.initialize_app(Credentials, {"databaseURL": f"https://{FirebaseID}-default-rtdb.europe-west1.firebasedatabase.app"})
+    firebase_admin.initialize_app(Credentials, {"databaseURL": f"https://{FirebaseID}-default-rtdb.europe-west1.firebasedatabase.app", 
+                                                "storageBucket": f"https://{FirebaseID}.appspot.com"})
+    FirebaseBucket = storage.bucket()
     BackendReference = db.reference("BackendMessages")
     AlertReference = db.reference("AlertSettings/Laptop")
     AppReference = db.reference("AppMessages")
@@ -53,6 +55,7 @@ def Firebase():
         ControlPanelResults = ControlPanel.get() or {}
         PowerOn = ControlPanelResults.get("Power", False)
         LockOn = ControlPanelResults.get("Lock", False)
+        CameraOn = ControlPanelResults.get("Camera", False)
 
         AlertSettings = AlertReference.get() or {}
         AlertsEnabled = AlertSettings.get("enabled", True)
@@ -77,13 +80,16 @@ def Firebase():
             for Result in Main():
                 break 
 
-            if Result and AlertsEnabled:
-                winsound.Beep(1500, int(500 * AlertsVolume))
+            if Result:
+                if AlertsEnabled:
+                    winsound.Beep(1500, int(500 * AlertsVolume))
+
                 Message = "Suspicious activity detected"
 
         BackendReference.set({
             "alert": Result,
-            "message": Message
+            "message": Message,
+            "timestamp": int(time.time())
         })
 
         print("Sent:", Message)

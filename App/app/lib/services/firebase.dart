@@ -13,6 +13,7 @@ class FirebaseService {
       yield {
         "alert": transmissionData?["alert"] == true,
         "message": transmissionData?["message"]?.toString() ?? "—",
+        "timestamp": transmissionData?["timestamp"] as int?,
       };
 
       await Future.delayed(interval);
