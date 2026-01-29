@@ -20,6 +20,21 @@ class FirebaseService {
     }
   }
 
+  Stream<Map<String, dynamic>> listenToLocation(
+    {Duration interval = const Duration(seconds: 3)}) async* {
+      while (true) {
+        final snapshot = await _database.child("LaptopLocation").get();
+        final transmissionData = snapshot.value as Map?;
+
+        yield {
+          "latitude": transmissionData?["latitude"] as double?,
+          "longitude": transmissionData?["longitude"] as double?,
+        };
+
+        await Future.delayed(interval);
+      }
+    }
+
   Stream<Map<String, dynamic>> listenToSettings() {
     return FirebaseDatabase.instance.ref("AlertSettings/App").onValue.map((event) {
       final transmissionData = event.snapshot.value as Map?;

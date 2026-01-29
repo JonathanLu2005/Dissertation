@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase.dart';
 import '../widgets/panel.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'dart:math';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   final backendDatabase = FirebaseDatabase.instance.ref("BackendMessages");
 
   StreamSubscription? subscription;
+  StreamSubscription? location;
   bool receivedAlert = false;
   String receivedMessage = "—";
   StreamSubscription? settingsSubscription;
@@ -27,6 +29,9 @@ class _HomePageState extends State<HomePage> {
   bool powerOn = false;
   Timer? timeCheck;
   DateTime? lastTimeCheck;
+  bool trackLocation = false;
+  double trackedLatitude = 0;
+  double trackedLongitude = 0;
 
   Future<void> alarm() async {
     await player.setVolume(alertVolume);
@@ -45,6 +50,8 @@ class _HomePageState extends State<HomePage> {
           receivedMessage = "Backend isn't connected";
         });
       }
+
+      trackLocation = false;
 
       backendDatabase.update({
         "message": receivedMessage
@@ -86,12 +93,45 @@ class _HomePageState extends State<HomePage> {
       });
     });
 
+    location = firebase.listenToLocation().listen((locationData) async {
+      final double? latitude = locationData["latitude"] as double?;
+      final double? longitude = locationData["longitude"] as double?;
+
+      if (latitude == null || longitude == null) return;
+
+      if (!trackLocation) {
+        trackedLatitude = latitude;
+        trackedLongitude = longitude;
+        trackLocation = true;
+      } else {
+        const Radius = 6371000;
+        final Phi1 = trackedLatitude * pi / 180;
+        final Phi2 = latitude * pi / 180;
+        final DistancePhi = (latitude - trackedLatitude) * pi / 180;
+        final DistanceLambda = (longitude - trackedLongitude) * pi / 180;
+
+        final Calculation = sin(DistancePhi / 2) * sin(DistancePhi / 2) + cos(Phi1) * cos(Phi2) * sin(DistanceLambda / 2) * sin(DistanceLambda / 2);
+        final Result = 2 * atan2(sqrt(Calculation), sqrt(1-Calculation)) * Radius;
+        if (Result > 4.2) {
+          receivedMessage = "Suspicious activity detected";
+          backendDatabase.update({
+            "message": receivedMessage
+          });
+
+          if (powerOn && alertsEnabled) {
+            alarm();
+          }
+        }
+      }
+    });
+
     timeCheck = Timer.periodic(const Duration(seconds: 1), checkConnection);
   }
 
   @override
   void dispose() {
     subscription?.cancel();
+    location?.cancel();
     settingsSubscription?.cancel();
     timeCheck?.cancel();
     player.dispose();
