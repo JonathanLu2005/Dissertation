@@ -27,20 +27,17 @@ class KeyboardMonitor:
             self.KeyQueue.append(True)
 
     def Live(self):
-        """ Generator which returns if a key has been pressed or not
+        """ Returns if a key has been pressed or not
 
         Returns:
-        - None
+        - Result (bool): True if key has been pressed else false
         """
         keyboard.hook(self.OnKey)
-        while True:
-            if self.KeyQueue:
-                yield self.KeyQueue.popleft()
-                self.KeyQueue.clear()
-            else:
-                yield False 
-            time.sleep(1)
-        self.Release()
+        if self.KeyQueue:
+            Result = self.KeyQueue.popleft()
+            self.KeyQueue.clear()
+            return Result
+        return False
 
     def Release(self):
         """ Kills code

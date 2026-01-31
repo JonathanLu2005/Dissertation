@@ -16,25 +16,22 @@ class USBMonitor():
         self.TotalDevices = set(Device.Dependent for Device in self.Laptop.Win32_USBControllerDevice())
 
     def Live(self):
-        """ Keeps checking if devices are tampered by comparing against how many are stored
+        """ Checks if devices are tampered by comparing against how many are stored
 
         Returns:
-        - None
+        - (bool): True if devices have changed else false
         """
-        while True:
-            try:
-                CurrentDevices = set(Device.Dependent for Device in self.Laptop.Win32_USBControllerDevice())
-                AddedDevices = CurrentDevices - self.TotalDevices 
-                RemovedDevices = self.TotalDevices - CurrentDevices 
+        try:
+            CurrentDevices = set(Device.Dependent for Device in self.Laptop.Win32_USBControllerDevice())
+            AddedDevices = CurrentDevices - self.TotalDevices 
+            RemovedDevices = self.TotalDevices - CurrentDevices 
 
-                if AddedDevices or RemovedDevices:
-                    yield True 
-                    self.TotalDevices = CurrentDevices
-                else: 
-                    yield False 
-                time.sleep(1)
-            except: 
-                continue
+            if AddedDevices or RemovedDevices:
+                self.TotalDevices = CurrentDevices
+                return True
+            return False
+        except: 
+            return False
 
     def Release(self):
         """ Kills code

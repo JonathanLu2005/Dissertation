@@ -17,22 +17,16 @@ class BatteryMonitor:
         self.Threshold = Threshold
 
     def Live(self):
-        """ Yields true if battery is below threshold
+        """ Returns true if battery is below threshold
 
         Returns:
-        - None
+        - (bool): True if battery is below threshold
         """
-        while True:
-            Battery = psutil.sensors_battery()
+        Battery = psutil.sensors_battery()
 
-            print(Battery.percent)
-
-            if Battery.percent <= self.Threshold:
-                yield True 
-            else: 
-                yield False 
-            time.sleep(1)
-        self.Release()
+        if Battery.percent <= self.Threshold:
+            return True 
+        return False
 
     def Release(self):
         """ Kills code

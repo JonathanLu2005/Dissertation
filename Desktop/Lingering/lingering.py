@@ -4,22 +4,18 @@ import mediapipe as mp
 import time
 
 class LingeringMonitor:
-    def __init__(self, LingeringThreshold=60, MaxRows=60, CameraIndex=0):
+    def __init__(self):
         """ Initialise lingering detection
-
-        Arguments:
-        - LingeringThreshold (int): Time taken till person is determined to be lingering
-        - MaxRows (int): Frames specified to record for evaluation
-        - CameraIndex (int): Positioning of the camera
 
         Attributes:
         - Cap (cv2.VideoCapture): Current camera feed
-        - MPPose (module): Mediapipes pose module
+        - MpPose (module): Mediapipes pose module
         - Pose (mediapipe.python.solutions.pose.Pose): Pose estimation model
-        - LingeringThreshold (int): Time taken till person is determined to be lingering
-        - MaxRows (int): Frames specified to record for evaluation
+        - LoiteringThreshold (int): Time taken till person is determined to be lingering
+        - MaxFrames (int): Frames specified to record for evaluation
         - PersonDetected (bool): True if model finds a person
         - StartTime (float): Timestamp when persons detected to determine if they've lingered
+        - FrameNumber (int): Keep track on frame number
 
         Raises:
         - RuntimeError: Camera not accessible
@@ -27,16 +23,17 @@ class LingeringMonitor:
         Returns:
         - None
         """
-        self.Cap = cv2.VideoCapture(CameraIndex)
-        if not self.Cap.isOpened():
-            raise RuntimeError("Camera not accessible.")
+        #self.Cap = cv2.VideoCapture(0)
+        #if not self.Cap.isOpened():
+        #    raise RuntimeError("Camera not accessible.")
 
-        self.MPPose = mp.solutions.pose
-        self.Pose = self.MPPose.Pose(model_complexity=0, min_detection_confidence=0.5, min_tracking_confidence=0.5)
-        self.LingeringThreshold = LingeringThreshold
-        self.MaxRows = MaxRows
+        self.MpPose = mp.solutions.pose
+        self.Pose = self.MpPose.Pose(model_complexity=0, min_detection_confidence=0.5, min_tracking_confidence=0.5)
+        self.LoiteringThreshold = 10
+        self.MaxFrames = 60000
         self.PersonDetected = False
         self.StartTime = None
+        self.FrameNumber = 0
 
     def GetFrame(self):
         """ Captures current camera frame
@@ -52,36 +49,25 @@ class LingeringMonitor:
             raise RuntimeError("Camera failed.")
         return cv2.resize(Frame, (900, 700))
     
-    def ProcessFrame(self, Result):
-        """ Analyse through models result and determine if persons present and is lingering
+    def ProcessFrame(self, Landmarks):
+        """ Analyse through models landmarks and determine if persons present and is lingering
 
         Arguments:
-        - Result (mediapipe.python.solution_base.SolutionOutputs): Mediapipe Pose results for current frame
+        - Landmarks (mediapipe.python.solution_base.SolutionOutputs): Mediapipe Pose landmarks for current frame
 
         Returns:
         - Tuple:
             - Status (str): String to confirm state of current frame
-            - Colour (tuple[int, int, int]): RGB value for UI displaying results
+            - Colour (tuple[int, int, int]): RGB value for UI displaying landmarks
             - DwellTime (float): Time current persons been detected for
-            - Confidence (float): Confidence in detecting the person
-            - BoundingBox (float): Estimates persons bounding box
         """     
-        Confidence = 0.0
-        BoundingBox = 0.0
-
-        if Result.pose_landmarks:
-            Confidence = 1.0
-            Landmarks = Result.pose_landmarks.landmark
-            xs = [Point.x * 900 for Point in Landmarks]
-            ys = [Point.y * 700 for Point in Landmarks]
-            BoundingBox = (max(xs) - min(xs)) * (max(ys) - min(ys))
-
+        if Landmarks.pose_landmarks:
             if not self.PersonDetected:
                 self.PersonDetected = True
                 self.StartTime = time.time()
             DwellTime = time.time() - self.StartTime
 
-            if DwellTime >= self.LingeringThreshold:
+            if DwellTime >= self.LoiteringThreshold:
                 Status = "LOITERING - NOT SAFE"
                 Colour = (0, 0, 255)
             else:
@@ -94,7 +80,7 @@ class LingeringMonitor:
             Status = "NO PERSON"
             Colour = (0, 255, 0)
 
-        return Status, Colour, DwellTime, Confidence, BoundingBox
+        return Status, Colour, DwellTime
     
     def GetDisplay(self, Status, Frame, Colour):
         """ Shows the outcome for the current frame
@@ -107,34 +93,45 @@ class LingeringMonitor:
         Returns:
         - bool: True if person is loitering
         """
-        #UI = f"{Status} | Conf={Confidence:.1f} | BBox={BoundingBox:.0f} | Time={DwellTime:.1f}s | Frame={FrameNumber}/{self.MaxRows}"
-        UI = f"Loitering False Positives (Object): {Status}"
-        cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
-        cv2.imshow("Linger Experiment (1 FPS)", Frame)
+        #UI = f"{Status} | Conf={Confidence:.1f} | BBox={BoundingBox:.0f} | Time={DwellTime:.1f}s | Frame={FrameNumber}/{self.MaxFrames}"
+        #UI = f"Loitering False Positives (Object): {Status}"
+
+        try: 
+            Time = time.time() - self.StartTime
+        except:
+            Time = 0
+        #Lines = [
+        #    f"Loitering Detection: {Status}",
+        #    f"Time: {Time:.3f}",
+        #]
+        
+        #y = 25
+        #for Line in Lines:
+        #    cv2.putText(Frame, Line, (10, y),
+        #                cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+        #    y += 22 
+        
+        #cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
+        #cv2.imshow("Linger Experiment (1 FPS)", Frame)
         if Colour == (0, 255, 0):
             return False 
         return True
 
-    def Live(self):
+    def Live(self, Frame):
         """ Live implementation for constant running of the system
 
-        Returns:
-        - None
-        """
-        FrameNumber = 0
-        while True:
-            FrameNumber += 1
-            Frame = self.GetFrame()
-            RGB = cv2.cvtColor(Frame, cv2.COLOR_BGR2RGB)
-            Result = self.Pose.process(RGB)
-            Status, Colour, DwellTime, Confidence, BoundingBox = self.ProcessFrame(Result)
-            FinalResult = self.GetDisplay(Status, Frame, Colour)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        Arguments:
+        - Frame (np.ndarray): Current frame captured
 
-            time.sleep(1)
-            yield FinalResult
-        self.Release()
+        Returns:
+        - FinalResult (bool): True if loitering else false
+        """
+        self.FrameNumber += 1
+        RGB = cv2.cvtColor(Frame, cv2.COLOR_BGR2RGB)
+        Result = self.Pose.process(RGB)
+        Status, Colour, DwellTime = self.ProcessFrame(Result)
+        FinalResult = self.GetDisplay(Status, Frame, Colour)
+        return FinalResult
 
     def Run(self):
         """ Runs functions to retrieve current frames, run it through model, and process frame
@@ -144,22 +141,38 @@ class LingeringMonitor:
         """
         FrameNumber = 0
 
-        #FirstFrame = self.GetFrame()
-        #Height, Width, _ = FirstFrame.shape
-        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
-        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        FirstFrame = self.GetFrame()
+        Height, Width, _ = FirstFrame.shape
+        FourCC = cv2.VideoWriter_fourcc(*"avc1")
+        Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
 
-        while FrameNumber < self.MaxRows:
+        while FrameNumber < self.MaxFrames:
             FrameNumber += 1
             Frame = self.GetFrame()
+
+            gray = cv2.cvtColor(Frame, cv2.COLOR_BGR2GRAY)
+            faces = self.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.05,      # smaller = more sensitive
+                minNeighbors=3,        # lower = more detections
+                minSize=(50, 50)       # detect slightly smaller faces
+            )
+
+            for (x, y, w, h) in faces:
+                roi = Frame[y:y+h, x:x+w]
+                Frame[y:y+h, x:x+w] = cv2.GaussianBlur(roi, (31, 31), 0)
+
             RGB = cv2.cvtColor(Frame, cv2.COLOR_BGR2RGB)
             Result = self.Pose.process(RGB)
 
-            Status, Colour, DwellTime, Confidence, BoundingBox = self.ProcessFrame(Result)
+            Status, Colour, DwellTime = self.ProcessFrame(Result)
 
-            LogLingering(FrameNumber, int(self.PersonDetected), Confidence, DwellTime, Status)
+            LogLingering(FrameNumber, int(self.PersonDetected), 0, DwellTime, Status)
             FinalResult = self.GetDisplay(Status, Frame, Colour)
-            #Writer.write(Frame)
+            Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -167,7 +180,7 @@ class LingeringMonitor:
             time.sleep(1)
 
         self.Release()
-        #Writer.release()
+        Writer.release()
         return "Lingering monitoring finished."
 
     def Release(self):
@@ -176,5 +189,5 @@ class LingeringMonitor:
         Returns:
         - None
         """
-        self.Cap.release()
+        #self.Cap.release()
         cv2.destroyAllWindows()

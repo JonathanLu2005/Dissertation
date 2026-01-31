@@ -9,20 +9,16 @@ from Desktop.Mask.Metrics.metrics import LogMask
 
 # https://universe.roboflow.com/joseph-nelson/mask-wearing
 class MaskMonitor:
-    def __init__(self, ModelName="mask-wearing/18", MaxRows=120, CameraIndex=0):
+    def __init__(self):
         """ Instantiate attributes to run the model
-
-        Arguments:
-        - ModelName (str): Name of the model used
-        - MaxRows (int): Number of frames to test
-        - CameraIndex (int): Camera index used
 
         Attributes:
         - APIKey (str): Roboflow API key for the model
         - Cap (cv2.VideoCapture): Camera used
         - Client (InferenceHTTPClient): Call to use account for the model
         - ModelID (str): Name of the model used
-        - MaxRows (int): Max number of frames to test monitor on
+        - MaxFrames (int): Max number of frames to test monitor on
+        - FrameNumber (int): Current frame
 
         Raises:
         - RuntimeError: Camera not accessible
@@ -31,14 +27,15 @@ class MaskMonitor:
         - None
         """
         load_dotenv(Path(__file__).resolve().parents[2]/".env")
-        self.APIKey = os.getenv("ROBOFLOW_API_KEY")
-        self.Cap = cv2.VideoCapture(CameraIndex)
-        if not self.Cap.isOpened():
-            raise RuntimeError("Camera not accessible.")
+        self.__APIKey = os.getenv("ROBOFLOW_API_KEY")
+        #self.Cap = cv2.VideoCapture(0)
+        #if not self.Cap.isOpened():
+        #    raise RuntimeError("Camera not accessible.")
 
-        self.Client = InferenceHTTPClient(api_url="https://serverless.roboflow.com", api_key=self.APIKey)
-        self.ModelID = ModelName
-        self.MaxRows = MaxRows
+        self.Client = InferenceHTTPClient(api_url="https://serverless.roboflow.com", api_key=self.__APIKey)
+        self.ModelID = "mask-wearing/18"
+        self.MaxFrames = 120
+        self.FrameNumber = 0
 
     def GetFrame(self):
         """ Retrieve current frame
@@ -114,39 +111,45 @@ class MaskMonitor:
             Colour = (0, 255, 0)
             Status = "NO MASK - SAFE"
 
-        for Detection in Detections:
-            x1 = int(Detection["x"] - Detection["width"] / 2)
-            y1 = int(Detection["y"] - Detection["height"] / 2)
-            x2 = int(Detection["x"] + Detection["width"] / 2)
-            y2 = int(Detection["y"] + Detection["height"] / 2)
-            Label = f'{Detection["class"]} {Detection["confidence"]:.2f}'
-            cv2.rectangle(Frame, (x1, y1), (x2, y2), Colour, 2)
-            cv2.putText(Frame, Label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+        #for Detection in Detections:
+        #    x1 = int(Detection["x"] - Detection["width"] / 2)
+        #    y1 = int(Detection["y"] - Detection["height"] / 2)
+        #    x2 = int(Detection["x"] + Detection["width"] / 2)
+        #    y2 = int(Detection["y"] + Detection["height"] / 2)
+        #    Label = f'{Detection["class"]} {Detection["confidence"]:.2f}'
+        #    cv2.rectangle(Frame, (x1, y1), (x2, y2), Colour, 2)
+        #    cv2.putText(Frame, Label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
 
         UI = f"Mask False Positives (Object): {Status}"
-        cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
-        cv2.imshow("Mask Experiment (1 FPS)", Frame)
+
+        #Lines = [
+        #    f"Mask Detection: {Status}",
+        #]
+
+        #y = 25
+        #for Line in Lines:
+        #    cv2.putText(Frame, Line, (10, y),
+        #                cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+        #    y += 22  
+
+        #cv2.putText(Frame, UI, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
+        #cv2.imshow("Mask Experiment (1 FPS)", Frame)
         return Status
     
-    def Live(self):
+    def Live(self, Frame):
         """ For live implementation to constantly return the results
 
-        Returns:
-        - None
-        """
-        FrameNumber = 0
-        while True:
-            FrameNumber += 1
-            Frame = self.GetFrame() 
-            Detections = self.RunInference(Frame)
-            Masked, Confidence = self.ProcessFrame(Detections)
-            Status = self.GetDisplay(Frame, Detections, Masked)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        Arguments:
+        - Frame (np.ndarray): Current frame captured
 
-            time.sleep(1)
-            yield Masked
-        self.Release()
+        Returns:
+        - Masked (bool): True if mask is worn else false
+        """
+        self.FrameNumber += 1
+        Detections = self.RunInference(Frame)
+        Masked, Confidence = self.ProcessFrame(Detections)
+        #Status = self.GetDisplay(Frame, Detections, Masked)
+        return Masked
 
     def Run(self):
         """ Capture, call API, retrieve and display results for each frame
@@ -157,23 +160,38 @@ class MaskMonitor:
             - Confidence (float): Confidence in outcome
         """
         FrameNumber = 0
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        FirstFrame = self.GetFrame()
+        Height, Width, _ = FirstFrame.shape
+        FourCC = cv2.VideoWriter_fourcc(*"mp4v")
+        Writer = cv2.VideoWriter("MaskOutput.mp4", FourCC, 1, (Width, Height))
 
-        #FirstFrame = self.GetFrame()
-        #Height, Width, _ = FirstFrame.shape
-        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
-        #Writer = cv2.VideoWriter("MaskOutput.mp4", FourCC, 1, (Width, Height))
-
-        while FrameNumber < self.MaxRows:
+        while FrameNumber < self.MaxFrames:
             FrameNumber += 1
 
             Frame = self.GetFrame()
+
+            gray = cv2.cvtColor(Frame, cv2.COLOR_BGR2GRAY)
+            faces = self.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.05,      # smaller = more sensitive
+                minNeighbors=3,        # lower = more detections
+                minSize=(50, 50)       # detect slightly smaller faces
+            )
+
+            for (x, y, w, h) in faces:
+                roi = Frame[y:y+h, x:x+w]
+                Frame[y:y+h, x:x+w] = cv2.GaussianBlur(roi, (31, 31), 0)
+
             Detections = self.RunInference(Frame)
             Masked, Confidence = self.ProcessFrame(Detections)
 
             Status = self.GetDisplay(Frame, Detections, Masked)
 
             LogMask(FrameNumber, Status, Confidence)
-            #Writer.write(Frame)
+            Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -181,7 +199,7 @@ class MaskMonitor:
             time.sleep(1)
 
         self.Release()
-        #Writer.release()
+        Writer.release()
         return "Mask monitoring finished."
 
     def Release(self):
@@ -190,5 +208,5 @@ class MaskMonitor:
         Returns:
         - None
         """
-        self.Cap.release()
+        #self.Cap.release()
         cv2.destroyAllWindows()

@@ -6,28 +6,18 @@ from skimage.metrics import structural_similarity as ssim
 from collections import deque   
 
 class BackgroundMonitor:
-    def __init__(self, CameraIndex=0, SSIMInterval=5, HistoryLen=10, MaxRows=10000):
+    def __init__(self):
         """ Hybrid (Optical Flow and KNN) computer vision component to determine background changes
-
-        Arguments:
-        - CameraIndex (int): Camera index to use
-        - SSIMInterval (int): Time gaps between SSIM calculations
-        - HistoryLen (int): Max Brightness values to hold to calculate average
-        - MaxRows (int): Max frames to log
 
         Attributes:
         - Cap (cv2.VideoCapture): Laptop's camera
-        - PrevGray (np.ndarray): Grayscale frame for Optical Flow
-        - BGSubtractor (cv2.createBackgroundSubtractorKNN): KNN background subtraction
+        - PrevGrayFrame (np.ndarray): Grayscale frame for Optical Flow
         - ReferenceFrame (np.ndarray): Frame for SSIM comparison 
         - LastSSIMCheck (float): Timestamp for last SSIM check
         - LastSSIMScore (float): Latest SSIM score
         - SSIMInterval (float): Delay between SSIM scores
-        - BrightnessHistory (collections.deque): Queue of recent average brightness values
-        - HistoryLen (int): Max BrightnessHistory length
-        - FrameCount (int): Number frames processed
-        - MaxRows (int): Max frames to capture till stop
-        - StartTime (float): Timestamp when monitoring started
+        - MaxFrames (int): Max frames to capture till stop
+        - FrameNumber (int): Current frame count
 
         Raises:
         - RuntimError: Camera not accessible
@@ -35,24 +25,17 @@ class BackgroundMonitor:
         Returns:
         - None
         """
-        self.Cap = cv2.VideoCapture(CameraIndex)
-        if not self.Cap.isOpened():
-            raise RuntimeError("Error: Camera not found.")
+        #self.Cap = cv2.VideoCapture(0)
+        #if not self.Cap.isOpened():
+        #    raise RuntimeError("Error: Camera not found.")
 
-        self.PrevGray = None
-        self.BGSubtractor = cv2.createBackgroundSubtractorKNN(history=200, dist2Threshold=1000.0)
-
+        self.PrevGrayFrame = None
         self.ReferenceFrame = None
         self.LastSSIMCheck = time.time()
         self.LastSSIMScore = 1.0
-        self.SSIMInterval = SSIMInterval
-
-        self.BrightnessHistory = deque(maxlen=HistoryLen)
-        self.HistoryLen = HistoryLen
-
-        self.FrameCount = 0
-        self.MaxRows = MaxRows
-        self.StartTime = time.time()
+        self.SSIMInterval = 5
+        self.MaxFrames = 100000
+        self.FrameNumber = 0
 
     def GetFrame(self):
         """ Captures current camera frame
@@ -99,34 +82,29 @@ class BackgroundMonitor:
         Returns:
         - Tuple:
             - Status (str): Background status
-            - FGMask (np.ndarray): Foreground mask
             - MotionRatio (float): Metric of movement
             - SSIMScore (float): SSIM score from frame
             - MeanBrightness (float): Frame average brightness
         """
         Gray = cv2.cvtColor(Frame, cv2.COLOR_BGR2GRAY)
 
-        FGMask = self.BGSubtractor.apply(Gray)
-        FGMask = cv2.morphologyEx(FGMask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-
-        if self.PrevGray is None:
-            self.PrevGray = Gray
+        if self.PrevGrayFrame is None:
+            self.PrevGrayFrame = Gray
             if self.ReferenceFrame is None:
                 self.ReferenceFrame = Gray.copy()
                 self.LastSSIMScore = 1.0
-            return "Initialising", FGMask, 0.0, self.LastSSIMScore, float(np.mean(Gray))
+            return "Initialising", 0.0, self.LastSSIMScore, float(np.mean(Gray))
 
         Flow = cv2.calcOpticalFlowFarneback(
-            self.PrevGray, Gray, None,
+            self.PrevGrayFrame, Gray, None,
             0.5, 3, 15, 3, 5, 1.2, 0
         )
-        self.PrevGray = Gray
+        self.PrevGrayFrame = Gray
 
         Mag, Ang = cv2.cartToPolar(Flow[..., 0], Flow[..., 1])
         MotionRatio = float(np.mean(Mag > 1.0))
 
         MeanBrightness = float(np.mean(Gray))
-        self.BrightnessHistory.append(MeanBrightness)
 
         CurrentTime = time.time()
         if self.ReferenceFrame is None:
@@ -152,15 +130,15 @@ class BackgroundMonitor:
 
         Status = self.GetStatus(MotionRatio, MeanBrightness)
 
-        return Status, FGMask, MotionRatio, self.LastSSIMScore, MeanBrightness
+        return Status, MotionRatio, self.LastSSIMScore, MeanBrightness
 
-    def GetDisplay(self, Frame, FGMask, Status):
+    def GetDisplay(self, Frame, Status, FrameNumber, MotionRatio, SSIMScore, Brightness):
         """ Shows current frame
         
         Arguments:
         - Frame (np.ndarray): Current frame
-        - FGMask (np.ndarray): Foreground mask
         - Status (str): What's detected
+        - FrameNumber (int): Current frame number
 
         Returns:
         - bool: True if background has altered
@@ -168,63 +146,86 @@ class BackgroundMonitor:
         #MaskColoured = cv2.applyColorMap(FGMask, cv2.COLORMAP_JET)
         #Display = cv2.addWeighted(Frame, 0.7, MaskColoured, 0.3, 0)
         #OverlayText = f"{Status} | Frame {self.FrameCount}/10000"
-        OverlayText = f"Background Test (Change): {Status}"
+        #OverlayText = f"Background Change Detection: {Status}\nMotion Ratio: {MotionRatio}\nSSIM Score: {SSIMScore}\nBrightness: {Brightness}"
+
+        #Lines = [
+        #    f"Background Change Detection: {Status}",
+        #    f"Motion Ratio: {MotionRatio:.3f}",
+        #    f"SSIM Score: {SSIMScore:.3f}",
+        #    f"Brightness: {Brightness:.1f}",
+        #]
 
         if "NOT SAFE" in Status:
             Colour = (0, 0, 255)
         else:
             Colour = (0, 255, 0)
 
-        cv2.putText(Frame, OverlayText, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
-        cv2.imshow("Hybrid Background Monitor", Frame)
+        #cv2.putText(Frame, OverlayText, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+
+        #y = 25
+        #for Line in Lines:
+        #    cv2.putText(Frame, Line, (10, y),
+        #                cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+        #    y += 22 
+        #cv2.imshow("Hybrid Background Monitor", Frame)
 
         if Colour == (0, 255, 0):
             return False 
         return True
 
-    def Live(self):
+    def Live(self, Frame):
         """ Live implementation for background changes
 
-        Returns:
-        - None 
-        """
-        FrameNumber = 0
-        while True:
-            FrameNumber += 1
-            Frame = self.GetFrame()
-            Status, FGMask, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
-            Result = self.GetDisplay(Frame, FGMask, Status)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        Arguments:
+        - Frame (np.ndarray): Current frame
 
-            time.sleep(1)
-            yield Result
-        self.Release()
+        Returns:
+        - Result (bool): True if background changed else false
+        """
+        self.FrameNumber += 1
+        Status, MotionRatio, SSIMScore, Brightness = self.ProcessFrame(Frame)
+        Result = self.GetDisplay(Frame, Status, self.FrameNumber, MotionRatio, SSIMScore, Brightness)
+        return Result
 
     def Run(self):
         """ Capture, process, display, and log metrics from the current frame
 
         Returns:
-        - Tuple:
-            - Status (str): Result of background analysis
-            - MotionRatio (float): Movement score from Optical Flow
+        - Status (str): Result of background analysis
         """
-        #FirstFrame = self.GetFrame()
-        #Height, Width, _ = FirstFrame.shape
-        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
-        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
 
-        #if self.FrameCount >= self.MaxRows:
-        #    Writer.release()
-        #    print("\n✅ Reached 200 logged frames — stopping monitoring.")
-        #    self.Release()
-        #    exit(0)
+        FirstFrame = self.GetFrame()
+        Height, Width, _ = FirstFrame.shape
+        FourCC = cv2.VideoWriter_fourcc(*"avc1")  # H.264 if available
 
-        while self.FrameCount <= self.MaxRows:
+        Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
+
+
+        FrameNumber = 0
+
+        while FrameNumber <= self.MaxFrames:
             Frame = self.GetFrame()
-            Status, FGMask, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
 
-            self.FrameCount += 1
+            gray = cv2.cvtColor(Frame, cv2.COLOR_BGR2GRAY)
+            faces = self.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.05,      # smaller = more sensitive
+                minNeighbors=3,        # lower = more detections
+                minSize=(50, 50)       # detect slightly smaller faces
+            )
+
+
+            for (x, y, w, h) in faces:
+                roi = Frame[y:y+h, x:x+w]
+                Frame[y:y+h, x:x+w] = cv2.GaussianBlur(roi, (31, 31), 0)
+
+
+            Status, MotionRatio, SSIMScore, Brightness  = self.ProcessFrame(Frame)
+
+            FrameNumber += 1
 
             #print(
             #    f"[{self.FrameCount:03d}/200]  "
@@ -234,9 +235,9 @@ class BackgroundMonitor:
             #)
             LogMetrics(MotionRatio, SSIMScore, Brightness)
 
-            Result = self.GetDisplay(Frame, FGMask, Status)
+            Result = self.GetDisplay(Frame, Status, FrameNumber, MotionRatio, SSIMScore, Brightness)
 
-            #Writer.write(Frame)
+            Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == 27:
                 self.Release()
@@ -244,10 +245,10 @@ class BackgroundMonitor:
 
             time.sleep(0.5)
 
-        #Writer.release()
+        Writer.release()
         self.Release()
 
-        return Status, MotionRatio, None
+        return Status
 
     def Release(self):
         """ Kills camera feed
@@ -255,5 +256,5 @@ class BackgroundMonitor:
         Returns:
         - None
         """
-        self.Cap.release()
+        #self.Cap.release()
         cv2.destroyAllWindows()

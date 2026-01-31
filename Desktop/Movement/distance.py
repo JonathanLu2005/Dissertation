@@ -6,25 +6,18 @@ from ultralytics import YOLO
 from Desktop.Movement.Metrics.metrics import LogDistance
 
 class DistanceMonitor:
-    def __init__(self, YoloModel=None, BoxThreshold=478.5, PoseThreshold=0.5, MaxRows=200, CameraIndex=0):
+    def __init__(self):
         """ Initialise parameters to determine if persons too close and models to capture this
-
-        Arguments:
-        - YoloModel (YOLO): YOLO model to determine a persons bounding box and pose
-        - BoxThreshold (int): Measurement of persons bounding box before they're too close
-        - PoseThreshold (float): Measurement of persons pose before they're too close
-        - MaxRows (int): Number of frames to test implementation
-        - CameraIndex (int): Camera index used
 
         Attributes:
         - Cap (cv2.VideoCapture): Laptop's camera
         - Yolo (YOLO): Model for pose detection and bounding box
-        - BoxThreshold (int): Measurement of persons bounding box before they're too close
+        - BoxThreshold (float): Measurement of persons bounding box before they're too close
         - MpPose (mediapipe.solutions.pose): Run pose estimator
         - Pose (mediapipe.solutions.pose.Pose): Pose estimation model
-        - MpDrawing (mediapipe.solutions.drawing_utils): Show pose landmarks on camera
         - PoseThreshold (float): Measurement of persons pose before they're too close 
-        - MaxRows (int): Number of frames to test implementation 
+        - MaxFrames (int): Number of frames to test implementation 
+        - FrameNumber (int): Current frame
 
         Raises:
         - RuntimeError: Camera not accessible
@@ -32,29 +25,24 @@ class DistanceMonitor:
         Returns:
         - None
         """
-        self.Cap = cv2.VideoCapture(CameraIndex)
-        if not self.Cap.isOpened():
-            raise RuntimeError("Error: Camera not accessible.")
+        #self.Cap = cv2.VideoCapture(0)
+        #if not self.Cap.isOpened():
+        #    raise RuntimeError("Error: Camera not accessible.")
 
-        self.Cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.Cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        #self.Cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        #self.Cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.Yolo = YOLO("yolo11n.pt")
 
-        if YoloModel is None:
-            self.Yolo = YOLO("yolo11n.pt")
-        else:
-            self.Yolo = YoloModel
-
-        self.BoxThreshold = BoxThreshold
-
+        self.BoxThreshold = 478.5
         self.MpPose = mp.solutions.pose
         self.Pose = self.MpPose.Pose(
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5
         )
-        self.MpDrawing = mp.solutions.drawing_utils
 
-        self.PoseThreshold = PoseThreshold
-        self.MaxRows = MaxRows
+        self.PoseThreshold = 0.5
+        self.MaxFrames = 200000
+        self.FrameNumber = 0
 
     def GetFrame(self):
         """ Captures current camera frame
@@ -144,10 +132,10 @@ class DistanceMonitor:
 
         return TorsoPixels, Status, Alert
 
-    def GetDisplay(self, Frame, BoxStatus, PoseStatus, FrameNumber):
+    def GetDisplay(self, Frame, BoxStatus, PoseStatus, FrameNumber, Torso, Height):
         """ Displays current frame and status to user
 
-        Arguments:
+        Arguments:  
         - Frame (np.ndarray): Current frame
         - BoxStatus (str): Status of persons bounding box
         - PoseStatus (str): Status of persons pose 
@@ -165,15 +153,30 @@ class DistanceMonitor:
 
         #Text = (
         #    f"{BoxStatus} | {PoseStatus} | "
-        #    f"Frame {FrameNumber}/{self.MaxRows}"
+        #    f"Frame {FrameNumber}/{self.MaxFrames}"
         #)
 
         Text = (
-            f"Distance Test (Sitting): {BoxStatus}"
+            f"Proximity Detection: {BoxStatus}"
         )
 
-        cv2.putText(Frame, Text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
-        cv2.imshow("Distance Monitor", Frame)
+        if not Torso: Torso = 0 
+        if not Height: Height = 0
+
+        #Lines = [
+        #    f"Proximity Detection: {BoxStatus}",
+        #    f"Pose Estimation Distance: {Torso:.3f}",
+        #    f"Bounding Box Height: {Height:.3f}",
+        #]
+
+        #y = 25
+        #for Line in Lines:
+        #    cv2.putText(Frame, Line, (10, y),
+        #                cv2.FONT_HERSHEY_SIMPLEX, 0.6, Colour, 2)
+        #    y += 22  
+
+        #cv2.putText(Frame, Text, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, Colour, 2)
+        #cv2.imshow("Distance Monitor", Frame)
 
     def ProcessFrame(self, Frame):
         """ Determines if persons too close via pose and bounding box distance via current frame
@@ -192,19 +195,15 @@ class DistanceMonitor:
         RGBFrame = cv2.cvtColor(Frame, cv2.COLOR_BGR2RGB)
 
         ResultsPose = self.Pose.process(RGBFrame)
-
         if ResultsPose.pose_landmarks:
             Landmarks = ResultsPose.pose_landmarks.landmark 
         else: 
             Landmarks = None
-
         TorsoMeasure, PoseStatus, PoseAlert = self.ComputePoseDistance(Landmarks, Frame.shape)
 
         ResultsBox = self.Yolo(Frame, verbose=False)[0]
         PersonHeight = self.DetectPersonHeight(ResultsBox.boxes)
         BoxStatus, BoxAlert = self.ComputeBoxStatus(PersonHeight)
-
-        #print(f"[DISTANCE] BoxHeight={PersonHeight} | TorsoWidth={TorsoMeasure}")
 
         FinalAlert = PoseAlert or BoxAlert
 
@@ -218,27 +217,23 @@ class DistanceMonitor:
             "PoseAlert": PoseAlert,
             "BoxStatus": BoxStatus,
             "BoxAlert": BoxAlert,
-            "FinalStatus": FinalStatus
+            "FinalStatus": FinalStatus,
+            "Height": PersonHeight
         }
     
-    def Live(self):
+    def Live(self, Frame):
         """ For live implementation to constantly return the results
 
-        Returns:
-        - None
-        """
-        FrameNumber = 0
-        while True:
-            FrameNumber += 1
-            Frame = self.GetFrame()
-            Results = self.ProcessFrame(Frame)
-            self.GetDisplay(Frame, Results["BoxStatus"], Results["PoseStatus"], FrameNumber)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        Arguments:
+        - Frame (np.ndarray): Current frame
 
-            time.sleep(1)
-            yield Results["PoseAlert"] or Results["BoxAlert"]
-        self.release()
+        Returns:
+        - (bool): True if close else false
+        """
+        self.FrameNumber += 1
+        Results = self.ProcessFrame(Frame)
+        #self.GetDisplay(Frame, Results["BoxStatus"], Results["PoseStatus"], self.FrameNumber, Results["Torso"], Results["Height"])
+        return Results["PoseAlert"] or Results["BoxAlert"]
 
     def Run(self):
         """ Capture, process, display, and log metrics for current frame
@@ -246,18 +241,35 @@ class DistanceMonitor:
         Returns:
         - str: Confirm monitoring has finished
         """
+
+        self.face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
         FrameNumber = 0
         FinalStatus = "Unknown"
         FinalTorso = None
 
-        #FirstFrame = self.GetFrame()
-        #Height, Width, _ = FirstFrame.shape
-        #FourCC = cv2.VideoWriter_fourcc(*"mp4v")
-        #Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
+        FirstFrame = self.GetFrame()
+        Height, Width, _ = FirstFrame.shape
+        FourCC = cv2.VideoWriter_fourcc(*"avc1")
+        Writer = cv2.VideoWriter("Output.mp4", FourCC, 1, (Width, Height))
 
-        while FrameNumber < self.MaxRows:
+        while FrameNumber < self.MaxFrames:
             FrameNumber += 1
             Frame = self.GetFrame()
+
+            gray = cv2.cvtColor(Frame, cv2.COLOR_BGR2GRAY)
+            faces = self.face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.05,      # smaller = more sensitive
+                minNeighbors=3,        # lower = more detections
+                minSize=(50, 50)       # detect slightly smaller faces
+            )
+
+
+            for (x, y, w, h) in faces:
+                roi = Frame[y:y+h, x:x+w]
+                Frame[y:y+h, x:x+w] = cv2.GaussianBlur(roi, (31, 31), 0)
 
             Results = self.ProcessFrame(Frame)
 
@@ -266,15 +278,15 @@ class DistanceMonitor:
 
             LogDistance(FinalTorso, None, FinalStatus)
 
-            self.GetDisplay(Frame, Results["BoxStatus"], Results["PoseStatus"], FrameNumber)
-            #Writer.write(Frame)
+            self.GetDisplay(Frame, Results["BoxStatus"], Results["PoseStatus"], FrameNumber, Results["Torso"], Results["Height"])
+            Writer.write(Frame)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
             time.sleep(1)
 
-        #Writer.release()
+        Writer.release()
         self.Release()
         return "Finished distance monitoring."
 
@@ -284,5 +296,5 @@ class DistanceMonitor:
         Returns:
         - None
         """
-        self.Cap.release()
+        #self.Cap.release()
         cv2.destroyAllWindows()
