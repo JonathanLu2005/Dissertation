@@ -70,17 +70,39 @@ def Main():
         # Live
         while True:
             Frame = Camera.GetFrame()
+            Message = ""
+
             Result1 = Monitor1.Live(Frame)
+            if Result1:
+                Message += "Someone is loitering\n"
             Result2 = Monitor2.Live(Frame)
+            if Result2:
+                Message += "Someone is within proximity\n"
             Result3 = Monitor3.Live(Frame)
+            if Result3:
+                Message += "Someone is wearing a mask\n"
             Result4 = Monitor4.Live(Frame)
+            if Result4:
+                Message += "Background has changed\n"
             Result5 = Monitor5.Live()
+            if Result5:
+                Message += "USB has been modified\n"
             Result6 = Monitor6.Live()
+            if Result6:
+                Message += "Battery is low\n"
             Result7 = Monitor7.Live()
-            Result = any([Result1, Result2, Result3, Result4, Result5, Result6, Result7])
-            print(Result)
+            if Result7:
+                Message += "Keyboard was used\n"
+            
+            if Message != "":
+                #print(True)
+                #print(Message)
+                yield (True,Message)
+            else:
+                #print(False)
+                #print("No suspicious activity is detected")
+                yield (False,"No suspicious activity is detected")
             time.sleep(1)
-            yield Result
 
         # Test
         #while True:

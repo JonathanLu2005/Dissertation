@@ -61,7 +61,7 @@ def Firebase():
         AlertsEnabled = AlertSettings.get("enabled", True)
         AlertsVolume = float(AlertSettings.get("volume", 1.0))
 
-        Result = False
+        SuspiciousDetected = False
         Message = "Powered off"
 
         Latitude, Longitude = asyncio.run(GetLocation())
@@ -75,19 +75,16 @@ def Firebase():
             ctypes.windll.user32.LockWorkStation()
 
         if PowerOn:
-            Message = "No suspicious activity detected"
-
             for Result in Main():
+                SuspiciousDetected, Message = Result
                 break 
 
-            if Result:
+            if SuspiciousDetected:
                 if AlertsEnabled:
                     winsound.Beep(1500, int(500 * AlertsVolume))
 
-                Message = "Suspicious activity detected"
-
         BackendReference.set({
-            "alert": Result,
+            "alert": SuspiciousDetected,
             "message": Message,
             "timestamp": int(time.time())
         })
