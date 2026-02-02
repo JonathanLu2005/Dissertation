@@ -19,10 +19,10 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
 
   void save() {
     database.set({
-      "BackgroundEnabled": backgroundEnabled,
-      "ProximityEnabled": proximityEnabled,
-      "LoiteringEnabled": loiteringEnabled,
-      "MaskEnabled": maskEnabled,
+      "background": backgroundEnabled,
+      "proximity": proximityEnabled,
+      "loitering": loiteringEnabled,
+      "mask": maskEnabled,
     });
   }
 

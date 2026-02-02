@@ -21,12 +21,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   void save() {
     database.set({
       "App": {
-        "Enabled": appEnabled,
-        "Volume": appVolume,
+        "enabled": appEnabled,
+        "volume": appVolume,
       },
       "Laptop": {
-        "Enabled": laptopEnabled,
-        "Volume": laptopVolume,
+        "enabled": laptopEnabled,
+        "volume": laptopVolume,
       }
     });
   }

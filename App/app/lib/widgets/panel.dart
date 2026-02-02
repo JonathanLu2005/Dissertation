@@ -12,10 +12,13 @@ class ControlPanel extends StatefulWidget {
 
 class ControlPanelState extends State<ControlPanel> {
   bool powerOn = false;
-  final databasePower = FirebaseDatabase.instance.ref("RemoteControl/Power");
+  final databasePower = FirebaseDatabase.instance.ref("RemoteControl/power");
 
   bool lockOn = false;
-  final databaseLock = FirebaseDatabase.instance.ref("RemoteControl/Lock");
+  final databaseLock = FirebaseDatabase.instance.ref("RemoteControl/lock");
+
+  bool cameraOn = false;
+  final databaseCamera = FirebaseDatabase.instance.ref("RemoteControl/camera");
 
   void togglePower() {
     setState(() => powerOn = !powerOn);
@@ -33,6 +36,11 @@ class ControlPanelState extends State<ControlPanel> {
       isScrollControlled: true,
       builder: (_) => const TrackLocation(),
     );
+  }
+
+  void toggleCamera() {
+    setState(() => cameraOn = !cameraOn);
+    databaseCamera.set(cameraOn);
   }
 
   @override
@@ -56,6 +64,11 @@ class ControlPanelState extends State<ControlPanel> {
             icon: Icons.map,
             onPressed: showMap,
             isOn: false,
+          ),
+          ControlButton(
+            icon: Icons.camera,
+            onPressed: toggleCamera, 
+            isOn: cameraOn,
           )
         ],
       )

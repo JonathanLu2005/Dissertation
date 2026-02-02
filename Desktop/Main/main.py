@@ -9,54 +9,19 @@ import time
 import ctypes
 import cv2 
 
-class CameraManager:
-    def __init__(self):
-        """ Retrieve frames from camera to analyse
-
-        Attributes:
-        - Cap (cv2.VideoCapture): Camera
-        - Frame (np.ndarray): Current frame
-
-        Raises:
-        - RuntimeError: Camera not accessible
-
-        Returns:
-        - None
-        """
-        self.Cap = cv2.VideoCapture(0)
-        if not self.Cap.isOpened():
-            raise RuntimeError("Can't access camera")
-        self.Frame = None 
-    
-    def GetFrame(self):
-        """ Return current frame
-
-        Returns:
-        - Frame (np.ndarray): Current frame
-        """
-        Ret, Frame = self.Cap.read()
-        if not Ret:
-            return None 
-        self.Frame = cv2.resize(Frame, (900, 700))
-        return self.Frame
-    
-    def Release(self):
-        """ Turns off camera
-
-        Returns:
-        - None
-        """
-        self.Cap.release()
-
-
-def Main():
+def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
     """ Calls computer vision components
+
+    Argments:
+    - BackgroundModel (bool): True if activated
+    - ProximityModel (bool): True if activated
+    - LoiteringModel (bool): True if activated
+    - MaskModel (bool): True if activated
+    - Frame (np.ndarray): Current frame
     
     Returns:
     - None
     """
-
-    Camera = CameraManager()
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
     Monitor1 = lingering.LingeringMonitor()
     Monitor2 = distance.DistanceMonitor()
@@ -68,41 +33,43 @@ def Main():
 
     try:
         # Live
-        while True:
-            Frame = Camera.GetFrame()
-            Message = ""
+        Message = ""
 
+        if LoiteringModel:
             Result1 = Monitor1.Live(Frame)
             if Result1:
                 Message += "Someone is loitering\n"
+        if ProximityModel:
             Result2 = Monitor2.Live(Frame)
             if Result2:
                 Message += "Someone is within proximity\n"
+        if MaskModel:
             Result3 = Monitor3.Live(Frame)
             if Result3:
                 Message += "Someone is wearing a mask\n"
+        if BackgroundModel:
             Result4 = Monitor4.Live(Frame)
             if Result4:
                 Message += "Background has changed\n"
-            Result5 = Monitor5.Live()
-            if Result5:
-                Message += "USB has been modified\n"
-            Result6 = Monitor6.Live()
-            if Result6:
-                Message += "Battery is low\n"
-            Result7 = Monitor7.Live()
-            if Result7:
-                Message += "Keyboard was used\n"
+        Result5 = Monitor5.Live()
+        if Result5:
+            Message += "USB has been modified\n"
+        Result6 = Monitor6.Live()
+        if Result6:
+            Message += "Battery is low\n"
+        Result7 = Monitor7.Live()
+        if Result7:
+            Message += "Keyboard was used\n"
             
-            if Message != "":
-                #print(True)
-                #print(Message)
-                yield (True,Message)
-            else:
-                #print(False)
-                #print("No suspicious activity is detected")
-                yield (False,"No suspicious activity is detected")
-            time.sleep(1)
+        if Message != "":
+            #print(True)
+            #print(Message)
+            yield (True,Message)
+        else:
+            #print(False)
+            #print("No suspicious activity is detected")
+            yield (False,"No suspicious activity is detected")
+        time.sleep(1)
 
         # Test
         #while True:

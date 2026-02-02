@@ -11,6 +11,45 @@ import ctypes
 import asyncio
 from winrt.windows.devices.geolocation import Geolocator 
 
+class CameraManager:
+    def __init__(self):
+        """ Retrieve frames from camera to analyse
+
+        Attributes:
+        - Cap (cv2.VideoCapture): Camera
+        - Frame (np.ndarray): Current frame
+
+        Raises:
+        - RuntimeError: Camera not accessible
+
+        Returns:
+        - None
+        """
+        self.Cap = cv2.VideoCapture(0)
+        if not self.Cap.isOpened():
+            raise RuntimeError("Can't access camera")
+        self.Frame = None 
+    
+    def GetFrame(self):
+        """ Return current frame
+
+        Returns:
+        - Frame (np.ndarray): Current frame
+        """
+        Ret, Frame = self.Cap.read()
+        if not Ret:
+            return None 
+        self.Frame = cv2.resize(Frame, (900, 700))
+        return self.Frame
+    
+    def Release(self):
+        """ Turns off camera
+
+        Returns:
+        - None
+        """
+        self.Cap.release()
+
 async def GetLocation():
     """ Retrieve laptop longitude and latitude coordinates
 
@@ -40,8 +79,8 @@ def Firebase():
     FirebaseBucket = storage.bucket()
     BackendReference = db.reference("BackendMessages")
     AlertReference = db.reference("AlertSettings/Laptop")
-    AppReference = db.reference("AppMessages")
     LocationReference = db.reference("LaptopLocation")
+    ModelReference = db.reference("ModelSettings")
     ControlPanel = db.reference("RemoteControl")
 
     ImagePath = os.path.join(BaseDirectory, "Warning.png")
@@ -50,16 +89,30 @@ def Firebase():
     cv2.waitKey(1)
 
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
+    Camera = None
 
     while True:
         ControlPanelResults = ControlPanel.get() or {}
-        PowerOn = ControlPanelResults.get("Power", False)
-        LockOn = ControlPanelResults.get("Lock", False)
-        CameraOn = ControlPanelResults.get("Camera", False)
+        PowerOn = ControlPanelResults.get("power", False)
+        LockOn = ControlPanelResults.get("lock", False)
+        CameraOn = ControlPanelResults.get("camera", False)
 
         AlertSettings = AlertReference.get() or {}
         AlertsEnabled = AlertSettings.get("enabled", True)
         AlertsVolume = float(AlertSettings.get("volume", 1.0))
+
+        if PowerOn and Camera is None:
+            Camera = CameraManager()
+
+        if not PowerOn and Camera is not None:
+            Camera.Release()
+            Camera = None
+
+        ModelSettings = ModelReference.get() or {}
+        BackgroundModel = ModelSettings.get("background", True)
+        ProximityModel = ModelSettings.get("proximity", True)
+        LoiteringModel = ModelSettings.get("loitering", True)
+        MaskModel = ModelSettings.get("mask", True)
 
         SuspiciousDetected = False
         Message = "Powered off"
@@ -75,7 +128,8 @@ def Firebase():
             ctypes.windll.user32.LockWorkStation()
 
         if PowerOn:
-            for Result in Main():
+            Frame = Camera.GetFrame()
+            for Result in Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
                 SuspiciousDetected, Message = Result
                 break 
 
