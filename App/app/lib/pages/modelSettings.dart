@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
 import '../widgets/enableToggle.dart';
+import '../services/loadModelSettings.dart';
 
 class ModelSettingsPage extends StatefulWidget {
   const ModelSettingsPage({super.key});
@@ -10,24 +10,49 @@ class ModelSettingsPage extends StatefulWidget {
 }
 
 class _ModelSettingsPageState extends State<ModelSettingsPage> {
-  final database = FirebaseDatabase.instance.ref("ModelSettings");
-
+  final ModelSettingsService settingsService = ModelSettingsService();
   bool backgroundEnabled = true;
   bool proximityEnabled = true;
   bool loiteringEnabled = true;
   bool maskEnabled = true;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSettings();
+  }
+
+  Future<void> loadSettings() async {
+    final data = await settingsService.loadSettings();
+
+    setState(() {
+      backgroundEnabled = data["background"]!;
+      proximityEnabled = data["proximity"]!;
+      loiteringEnabled = data["loitering"]!;
+      maskEnabled = data["mask"]!;
+      isLoading = false;
+    });
+  }
 
   void save() {
-    database.set({
-      "background": backgroundEnabled,
-      "proximity": proximityEnabled,
-      "loitering": loiteringEnabled,
-      "mask": maskEnabled,
-    });
+    settingsService.saveSettings(
+      backgroundEnabled: backgroundEnabled,
+      proximityEnabled: proximityEnabled,
+      loiteringEnabled: loiteringEnabled,
+      maskEnabled: maskEnabled,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator()
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: const Text("Alert Settings")),
       body: ListView(

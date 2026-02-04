@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'controlButton.dart';
-import 'package:firebase_database/firebase_database.dart';
+import '../services/loadPanelSettings.dart';
 import '../services/map.dart';
 
 class ControlPanel extends StatefulWidget {
@@ -11,23 +11,45 @@ class ControlPanel extends StatefulWidget {
 }
 
 class ControlPanelState extends State<ControlPanel> {
+  final PanelSettingsService settingsService = PanelSettingsService();
   bool powerOn = false;
-  final databasePower = FirebaseDatabase.instance.ref("RemoteControl/power");
-
   bool lockOn = false;
-  final databaseLock = FirebaseDatabase.instance.ref("RemoteControl/lock");
-
   bool cameraOn = false;
-  final databaseCamera = FirebaseDatabase.instance.ref("RemoteControl/camera");
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSettings();
+  }
+
+  Future<void> loadSettings() async {
+    final data = await settingsService.loadSettings();
+
+    setState(() {
+      powerOn = data["power"]!;
+      lockOn = data["lock"]!;
+      cameraOn = data["camera"]!;
+      isLoading = false;
+    });
+  }
+
+  void save() {
+    settingsService.saveSettings(
+      powerOn: powerOn,
+      lockOn: lockOn,
+      cameraOn: cameraOn,
+    );
+  }
 
   void togglePower() {
     setState(() => powerOn = !powerOn);
-    databasePower.set(powerOn);
+    save();
   }
 
   void toggleLock() {
     setState(() => lockOn = !lockOn);
-    databaseLock.set(lockOn);
+    save();
   }
 
   void showMap() {
@@ -40,11 +62,17 @@ class ControlPanelState extends State<ControlPanel> {
 
   void toggleCamera() {
     setState(() => cameraOn = !cameraOn);
-    databaseCamera.set(cameraOn);
+    save();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator()
+      );
+    }
+    
     return Container(
       padding: const EdgeInsets.all(12),
       child: Row(

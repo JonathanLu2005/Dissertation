@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
 import '../widgets/enableToggle.dart';
 import '../widgets/volumeToggle.dart';
+import '../services/loadNotificationSettings.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -11,28 +11,52 @@ class NotificationSettingsPage extends StatefulWidget {
 }
 
 class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
-  final database = FirebaseDatabase.instance.ref("AlertSettings");
+  final NotificationSettingsService settingsService = NotificationSettingsService();
 
   bool appEnabled = true;
-  double appVolume = 0.8;
+  double appVolume = 0;
   bool laptopEnabled = true;
-  double laptopVolume = 1.0;
+  double laptopVolume = 0;
 
-  void save() {
-    database.set({
-      "App": {
-        "enabled": appEnabled,
-        "volume": appVolume,
-      },
-      "Laptop": {
-        "enabled": laptopEnabled,
-        "volume": laptopVolume,
-      }
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSettings();
+  }
+
+  Future<void> loadSettings() async {
+    final data = await settingsService.loadSettings();
+    
+    setState(() {
+      appEnabled = data["App"]["enabled"];
+      appVolume = data["App"]["volume"];
+      laptopEnabled = data["Laptop"]["enabled"];
+      laptopVolume = data["Laptop"]["volume"];
+      isLoading = false;
     });
   }
 
+  void save() {
+    settingsService.saveSettings(
+      appEnabled: appEnabled,
+      appVolume: appVolume,
+      laptopEnabled: laptopEnabled,
+      laptopVolume: laptopVolume,
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator()
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text("Alert Settings")),
       body: ListView(
