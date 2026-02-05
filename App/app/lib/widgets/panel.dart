@@ -15,6 +15,7 @@ class ControlPanelState extends State<ControlPanel> {
   bool powerOn = false;
   bool lockOn = false;
   bool cameraOn = false;
+  bool micOn = false;
   bool isLoading = true;
 
   @override
@@ -30,6 +31,7 @@ class ControlPanelState extends State<ControlPanel> {
       powerOn = data["power"]!;
       lockOn = data["lock"]!;
       cameraOn = data["camera"]!;
+      micOn = data["mic"]!;
       isLoading = false;
     });
   }
@@ -39,6 +41,7 @@ class ControlPanelState extends State<ControlPanel> {
       powerOn: powerOn,
       lockOn: lockOn,
       cameraOn: cameraOn,
+      micOn: micOn,
     );
   }
 
@@ -62,6 +65,11 @@ class ControlPanelState extends State<ControlPanel> {
 
   void toggleCamera() {
     setState(() => cameraOn = !cameraOn);
+    save();
+  }
+
+  void toggleMic() {
+    setState(() => micOn = !micOn);
     save();
   }
 
@@ -97,6 +105,11 @@ class ControlPanelState extends State<ControlPanel> {
             icon: Icons.camera,
             onPressed: toggleCamera, 
             isOn: cameraOn,
+          ),
+          ControlButton(
+            icon: Icons.mic,
+            onPressed: toggleMic,
+            isOn: micOn,
           )
         ],
       )

@@ -51,6 +51,12 @@ class FirebaseService {
     });
   }
 
+  Stream<bool> listenToMic() {
+    return FirebaseDatabase.instance.ref("RemoteControl/mic").onValue.map((event) {
+      return event.snapshot.value == true;
+    });
+  }
+
   Future<void> sendToBackend(String message) async {
     await _database.child("AppMessages").set(message);
   }
