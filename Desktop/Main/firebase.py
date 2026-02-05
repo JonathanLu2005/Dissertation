@@ -10,6 +10,8 @@ import cv2
 import ctypes
 import asyncio
 from winrt.windows.devices.geolocation import Geolocator 
+from Desktop.Main.livestream import Streamer, StartStreamingServer
+import threading
 
 class CameraManager:
     def __init__(self):
@@ -63,6 +65,22 @@ async def GetLocation():
     Coordinates = Position.coordinate.point.position 
     return Coordinates.latitude, Coordinates.longitude
 
+def StreamLoop(Camera):
+    """ Enable the live stream
+
+    Arguments:
+    - Camera (CameraManager): Access to camera
+
+    Returns:
+    - None
+    """
+    while True:
+        if Camera is not None and Streamer.On:
+            Frame = Camera.GetFrame()
+            if Frame is not None:
+                Streamer.Update(Frame)
+        time.sleep(0.03)
+
 def Firebase():
     """ Establish connection to the Firebase server
 
@@ -82,6 +100,7 @@ def Firebase():
     LocationReference = db.reference("LaptopLocation")
     ModelReference = db.reference("ModelSettings")
     ControlPanel = db.reference("RemoteControl")
+    StreamCurrent = False
 
     ImagePath = os.path.join(BaseDirectory, "Warning.png")
     Warning = cv2.imread(ImagePath)
@@ -90,6 +109,8 @@ def Firebase():
 
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
     Camera = None
+
+    StartStreamingServer()
 
     while True:
         ControlPanelResults = ControlPanel.get() or {}
@@ -103,6 +124,19 @@ def Firebase():
 
         if PowerOn and Camera is None:
             Camera = CameraManager()
+            threading.Thread(
+                target=StreamLoop,
+                args=(Camera,),
+                daemon=True
+            ).start()
+
+        if CameraOn and not StreamCurrent:
+            Streamer.On = True
+            StreamCurrent = True 
+
+        if not CameraOn and StreamCurrent:
+            Streamer.On = False
+            StreamCurrent = False
 
         if not PowerOn and Camera is not None:
             Camera.Release()
@@ -129,6 +163,7 @@ def Firebase():
 
         if PowerOn:
             Frame = Camera.GetFrame()
+
             for Result in Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
                 SuspiciousDetected, Message = Result
                 break 
@@ -145,6 +180,5 @@ def Firebase():
 
         print("Sent:", Message)
         time.sleep(3)
-
 
 Firebase()

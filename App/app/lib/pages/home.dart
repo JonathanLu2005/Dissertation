@@ -6,6 +6,7 @@ import '../services/firebase.dart';
 import '../widgets/panel.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:math';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,8 +19,10 @@ class _HomePageState extends State<HomePage> {
   final FirebaseService firebase = FirebaseService();
   final AudioPlayer player = AudioPlayer();
   final backendDatabase = FirebaseDatabase.instance.ref("BackendMessages");
+  late final WebViewController streamController;
 
   StreamSubscription? subscription;
+  StreamSubscription? cameraSubscription;
   StreamSubscription? location;
   bool receivedAlert = false;
   String receivedMessage = "—";
@@ -32,6 +35,8 @@ class _HomePageState extends State<HomePage> {
   bool trackLocation = false;
   double trackedLatitude = 0;
   double trackedLongitude = 0;
+  bool cameraOn = false;
+  bool streamLoaded = false;
 
   Future<void> alarm() async {
     await player.setVolume(alertVolume);
@@ -66,6 +71,39 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    streamController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadHtmlString("""
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              html, body {
+                margin: 0;
+                padding: 0;
+                background: black;
+                height: 100%;
+                overflow: hidden;
+              }
+              img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="http://192.168.1.94:8000/Stream" />
+          </body>
+      """);
+
+    cameraSubscription = firebase.listenToCamera().listen((cameraValue) {
+      setState(() {
+        cameraOn = cameraValue;
+      });
+    });
 
     settingsSubscription = firebase.listenToSettings().listen((settings) {
       setState(() {
@@ -135,6 +173,7 @@ class _HomePageState extends State<HomePage> {
     settingsSubscription?.cancel();
     timeCheck?.cancel();
     player.dispose();
+    cameraSubscription?.cancel();
     super.dispose();
   }
 
@@ -146,11 +185,28 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           Expanded(
-            child: Center(
-              child: Text(
-                receivedMessage,
-                style: const TextStyle(fontSize: 18),
-              ),
+            child: Column(
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.width * 0.6,
+                  child: cameraOn ? WebViewWidget(controller: streamController) : Container(
+                    color: Colors.black,
+                    child: const Center(
+                      child: Text(
+                        "No recording available",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+                Text(
+                  receivedMessage,
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+              ]
             ),
           ),
           const ControlPanel(),

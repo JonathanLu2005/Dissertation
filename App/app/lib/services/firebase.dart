@@ -45,6 +45,12 @@ class FirebaseService {
     });
   }
 
+  Stream<bool> listenToCamera() {
+    return FirebaseDatabase.instance.ref("RemoteControl/camera").onValue.map((event) {
+      return event.snapshot.value == true;
+    });
+  }
+
   Future<void> sendToBackend(String message) async {
     await _database.child("AppMessages").set(message);
   }
