@@ -89,3 +89,19 @@ def StartStreamingServer():
         target = lambda: uvicorn.run(App, host="0.0.0.0", port=8000, log_level="warning"),
         daemon=True
     ).start()
+
+def StreamLoop(Camera):
+    """ Enable the live stream
+
+    Arguments:
+    - Camera (CameraManager): Access to camera
+
+    Returns:
+    - None
+    """
+    while True:
+        if Camera is not None and Streamer.On:
+            Frame = Camera.GetFrame()
+            if Frame is not None:
+                Streamer.Update(Frame)
+        time.sleep(0.03)
