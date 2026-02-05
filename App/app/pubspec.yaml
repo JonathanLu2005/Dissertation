@@ -43,6 +43,9 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.1
   webview_flutter: ^4.7.0
+  flutter_sound: ^9.2.13
+  web_socket_channel: ^2.4.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:

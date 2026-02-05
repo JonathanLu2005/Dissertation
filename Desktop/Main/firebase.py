@@ -11,6 +11,7 @@ import ctypes
 import asyncio
 from winrt.windows.devices.geolocation import Geolocator 
 from Desktop.Main.livestream import Streamer, StartStreamingServer
+from Desktop.Main.mic import StartAudioStream
 import threading
 
 class CameraManager:
@@ -111,6 +112,7 @@ def Firebase():
     Camera = None
 
     StartStreamingServer()
+    StartAudioStream()
 
     while True:
         ControlPanelResults = ControlPanel.get() or {}

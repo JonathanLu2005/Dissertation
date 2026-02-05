@@ -7,6 +7,7 @@ import '../widgets/panel.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:math';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../services/mic.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,10 +21,12 @@ class _HomePageState extends State<HomePage> {
   final AudioPlayer player = AudioPlayer();
   final backendDatabase = FirebaseDatabase.instance.ref("BackendMessages");
   late final WebViewController streamController;
+  final MicStreamer micStreamer = MicStreamer();
 
   StreamSubscription? subscription;
   StreamSubscription? cameraSubscription;
   StreamSubscription? location;
+  StreamSubscription? micSubscription;
   bool receivedAlert = false;
   String receivedMessage = "—";
   StreamSubscription? settingsSubscription;
@@ -37,6 +40,7 @@ class _HomePageState extends State<HomePage> {
   double trackedLongitude = 0;
   bool cameraOn = false;
   bool streamLoaded = false;
+  bool micOn = false;
 
   Future<void> alarm() async {
     await player.setVolume(alertVolume);
@@ -71,6 +75,18 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    micSubscription = firebase.listenToMic().listen((micValue) async {
+      if (micValue && !micOn) {
+        await micStreamer.startRecording();
+      } else if (!micValue && micOn) {
+        await micStreamer.stopRecording();
+      }
+
+      setState(() {
+        micOn = micValue;
+      });
+    });
 
     streamController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
