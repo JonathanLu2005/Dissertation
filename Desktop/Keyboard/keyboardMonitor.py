@@ -13,6 +13,7 @@ class KeyboardMonitor:
         - None
         """
         self.KeyQueue = deque()
+        keyboard.hook(self.OnKey)
 
     def OnKey(self, Event):
         """ Method to detect if a key has been pressed and update queue as so
@@ -32,7 +33,6 @@ class KeyboardMonitor:
         Returns:
         - Result (bool): True if key has been pressed else false
         """
-        keyboard.hook(self.OnKey)
         if self.KeyQueue:
             Result = self.KeyQueue.popleft()
             self.KeyQueue.clear()
