@@ -45,7 +45,8 @@ class TrackLocationState extends State<TrackLocation> {
         ),
         children: [
           TileLayer(
-            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            urlTemplate: "https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=qmYLLt0F5BfqYd96yoPw",
+            userAgentPackageName: "com.your.app",
           ),
           MarkerLayer(
             markers: [
