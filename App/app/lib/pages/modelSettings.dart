@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/enableToggle.dart';
 import '../services/loadModelSettings.dart';
+import '../widgets/informationButton.dart';
 
 class ModelSettingsPage extends StatefulWidget {
   const ModelSettingsPage({super.key});
@@ -61,7 +62,15 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text("Background Detection", style: TextStyle(fontSize: 18)),
+          Row(
+            children: [
+              const Text("Background Detection", style: TextStyle(fontSize: 18)),
+              InformationButton(
+                title: "Background Detection",
+                description: "Detects if the scene or brightness has changed significantly."
+              ),
+            ],
+          ),
           ToggleSetting(
             label: "Enabled",
             value: backgroundEnabled,
@@ -73,7 +82,15 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
 
           const SizedBox(height: 24),
 
-          const Text("Proximity Detection", style: TextStyle(fontSize: 18)),
+          Row(
+            children: [
+              const Text("Proximity Detection", style: TextStyle(fontSize: 18)),
+              InformationButton(
+                title: "Proximity Detection",
+                description: "Detects if someone is standing or sitting too close to the laptop."
+              ),
+            ],
+          ),
           ToggleSetting(
             label: "Enabled",
             value: proximityEnabled,
@@ -85,7 +102,15 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
 
           const SizedBox(height: 24),
 
-          const Text("Loitering Detection", style: TextStyle(fontSize: 18)),
+          Row(
+            children: [
+              const Text("Loitering Detection", style: TextStyle(fontSize: 18)),
+              InformationButton(
+                title: "Loitering Detection",
+                description: "Detects if someone is loitering around the laptop for a prolonged period."
+              ),
+            ],
+          ),
           ToggleSetting(
             label: "Enabled",
             value: loiteringEnabled,
@@ -97,7 +122,15 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
 
           const SizedBox(height: 24),
 
-          const Text("Mask Detection", style: TextStyle(fontSize: 18)),
+          Row( 
+            children: [ 
+              const Text("Mask Detection", style: TextStyle(fontSize: 18)),
+              InformationButton(
+                title: "Mask Detection", 
+                description: "Detects if someone is wearing a mask or not."
+              ),
+            ],
+          ),
           ToggleSetting(
             label: "Enabled",
             value: maskEnabled,
