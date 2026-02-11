@@ -18,6 +18,8 @@ class ToggleSetting extends StatelessWidget {
       title: Text(label),
       value: value,
       onChanged: onChanged,
+      activeColor: const Color(0xFF1D7303),
+      activeTrackColor: const Color(0xFF1D7303),
     );
   }
 }

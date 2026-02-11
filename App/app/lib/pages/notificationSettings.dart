@@ -58,7 +58,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Alert Settings")),
+      appBar: AppBar(
+        title: const Text("Alarm Settings"),
+        backgroundColor: const Color(0xFFEFF2F1)
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

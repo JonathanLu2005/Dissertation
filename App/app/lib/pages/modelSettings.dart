@@ -54,7 +54,10 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text("Alert Settings")),
+      appBar: AppBar(
+        title: const Text("Model Settings"),
+        backgroundColor: const Color(0xFFEFF2F1)
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

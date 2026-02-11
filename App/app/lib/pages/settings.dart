@@ -10,7 +10,10 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Settings")), 
+      appBar: AppBar(
+        title: const Text("Settings"),
+        backgroundColor: const Color(0xFFEFF2F1)
+      ), 
       bottomNavigationBar: const AppNavigationBar(currentPage: 1),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -32,7 +35,7 @@ class SettingsPage extends StatelessWidget {
 
             Tiles(
               icon: Icons.notifications,
-              label: "Alerts",
+              label: "Alarms",
               onTap: () {
                 Navigator.push(
                   context,

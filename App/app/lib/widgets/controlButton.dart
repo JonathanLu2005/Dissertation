@@ -18,7 +18,7 @@ class ControlButton extends StatelessWidget {
       icon: Icon(
         icon, 
         size: 28,
-        color: isOn ? Colors.green : Colors.grey,
+        color: isOn ? const Color(0xFF1D7303) : const Color(0xFF363835),
       ),
       onPressed: onPressed,
     );

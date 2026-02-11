@@ -20,6 +20,9 @@ class AppNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      backgroundColor: const Color(0xFFEFF2F1),
+      unselectedItemColor: const Color(0xFF363835),
+      selectedItemColor: const Color(0xFF1D7303),
       currentIndex: currentPage,
       onTap: (i) => _onClick(context, i),
       items: const [

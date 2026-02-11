@@ -19,6 +19,7 @@ class VolumeSetting extends StatelessWidget {
       label: value.toStringAsFixed(1),
       value: value,
       onChanged: onChanged,
+      activeColor: const Color(0xFF1D7303),
     );
   }
 }

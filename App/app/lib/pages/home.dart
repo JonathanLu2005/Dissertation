@@ -196,7 +196,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Status")),
+      appBar: AppBar(
+        title: const Text("Status"),
+        backgroundColor: const Color(0xFFEFF2F1)
+      ),
       bottomNavigationBar: const AppNavigationBar(currentPage: 0),
       body: Column(
         children: [

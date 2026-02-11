@@ -13,7 +13,7 @@ class MicStreamer {
     await Permission.microphone.request();
     await micRecorder.openRecorder();
 
-    channel = WebSocketChannel.connect(Uri.parse("ws://172.25.115.254:8765"),);
+    channel = WebSocketChannel.connect(Uri.parse("ws://192.168.1.94:8765"),);
 
     audioStream = StreamController<Uint8List>();
     audioStream!.stream.listen((buffer) {
