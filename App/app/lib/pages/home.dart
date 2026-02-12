@@ -8,6 +8,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'dart:math';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/mic.dart';
+import '../services/locationTracker.dart';
+import '../services/streamService.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +24,7 @@ class _HomePageState extends State<HomePage> {
   final backendDatabase = FirebaseDatabase.instance.ref("BackendMessages");
   late final WebViewController streamController;
   final MicStreamer micStreamer = MicStreamer();
+  final LocationService locationTracker = LocationService();
 
   StreamSubscription? subscription;
   StreamSubscription? cameraSubscription;
@@ -35,9 +38,6 @@ class _HomePageState extends State<HomePage> {
   bool powerOn = false;
   Timer? timeCheck;
   DateTime? lastTimeCheck;
-  bool trackLocation = false;
-  double trackedLatitude = 0;
-  double trackedLongitude = 0;
   bool cameraOn = false;
   bool streamLoaded = false;
   bool micOn = false;
@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
 
-      trackLocation = false;
+      locationTracker.reset();
 
       backendDatabase.update({
         "message": receivedMessage
@@ -88,32 +88,7 @@ class _HomePageState extends State<HomePage> {
       });
     });
 
-    streamController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadHtmlString("""
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              html, body {
-                margin: 0;
-                padding: 0;
-                background: black;
-                height: 100%;
-                overflow: hidden;
-              }
-              img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-              }
-            </style>
-          </head>
-          <body>
-            <img src="http://192.168.1.94:8000/Stream" />
-          </body>
-      """);
+    streamController = StreamService.build("http://172.25.11.164:8000/Stream",);
 
     cameraSubscription = firebase.listenToCamera().listen((cameraValue) {
       setState(() {
@@ -148,35 +123,16 @@ class _HomePageState extends State<HomePage> {
     });
 
     location = firebase.listenToLocation().listen((locationData) async {
-      final double? latitude = locationData["latitude"] as double?;
-      final double? longitude = locationData["longitude"] as double?;
-
-      if (latitude == null || longitude == null) return;
-
-      if (!trackLocation) {
-        trackedLatitude = latitude;
-        trackedLongitude = longitude;
-        trackLocation = true;
-      } else {
-        const Radius = 6371000;
-        final Phi1 = trackedLatitude * pi / 180;
-        final Phi2 = latitude * pi / 180;
-        final DistancePhi = (latitude - trackedLatitude) * pi / 180;
-        final DistanceLambda = (longitude - trackedLongitude) * pi / 180;
-
-        final Calculation = sin(DistancePhi / 2) * sin(DistancePhi / 2) + cos(Phi1) * cos(Phi2) * sin(DistanceLambda / 2) * sin(DistanceLambda / 2);
-        final Result = 2 * atan2(sqrt(Calculation), sqrt(1-Calculation)) * Radius;
-        if (Result > 4.2) {
-          receivedMessage = "Suspicious activity detected";
-          backendDatabase.update({
-            "message": receivedMessage
-          });
-
-          if (powerOn && alertsEnabled) {
-            alarm();
-          }
-        }
-      }
+      locationTracker.processLocation( 
+        locationData: locationData,
+        powerOn: powerOn,
+        alertsEnabled: alertsEnabled,
+        alarm: alarm,
+        onMessage: (message) {
+          setState(() => receivedMessage = message); 
+        },
+        backendUpdate: backendDatabase.update,
+      );
     });
 
     timeCheck = Timer.periodic(const Duration(seconds: 1), checkConnection);
