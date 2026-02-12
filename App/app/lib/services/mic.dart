@@ -13,19 +13,20 @@ class MicStreamer {
     await Permission.microphone.request();
     await micRecorder.openRecorder();
 
-    channel = WebSocketChannel.connect(Uri.parse("ws://192.168.1.94:8765"),);
+    channel = WebSocketChannel.connect(Uri.parse("ws://172.25.11.164:8765"),);
 
     audioStream = StreamController<Uint8List>();
     audioStream!.stream.listen((buffer) {
-      print("Audio chunk: ${buffer.length}");
-      channel?.sink.add(buffer);
+      if (channel != null && buffer.isNotEmpty) {
+        channel!.sink.add(buffer);
+      }
     });
 
     await micRecorder.startRecorder(
       codec: Codec.pcm16,
       numChannels: 1,
       sampleRate: 16000,
-      audioSource: AudioSource.microphone,
+      bufferSize: 2048,
       toStream: audioStream!.sink,
     );
   }

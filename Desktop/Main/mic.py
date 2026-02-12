@@ -6,7 +6,7 @@ import threading
 Format = pyaudio.paInt16 
 Channels = 1 
 Rate = 16000
-Chunk = 512
+Chunk = 2048
 
 Audio = pyaudio.PyAudio()
 Stream = Audio.open(
@@ -26,8 +26,13 @@ async def AudioHandler(LiveAudio):
     Returns:
     - None
     """
-    async for Data in LiveAudio:
-        Stream.write(Data)
+    try:
+        async for Data in LiveAudio:
+            if len(Data) > Chunk * 2:
+                Data = Data[-Chunk * 2:]  
+            Stream.write(Data)
+    except websockets.exceptions.ConnectionClosed:
+        print("Client disconnected")
 
 async def RunAudioServer():
     """ Starts websocket server to receive audio
