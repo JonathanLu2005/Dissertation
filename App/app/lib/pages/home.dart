@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
     if (difference > 20) {
       if (mounted) {
         setState(() {
-          receivedMessage = "Backend isn't connected";
+          receivedMessage = "Backend isn't connected - internet or laptop might be off.";
         });
       }
 
