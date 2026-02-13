@@ -36,11 +36,12 @@ class FirebaseService {
     }
 
   Stream<Map<String, dynamic>> listenToSettings() {
-    return FirebaseDatabase.instance.ref("AlertSettings/App").onValue.map((event) {
+    return FirebaseDatabase.instance.ref("AlertSettings").onValue.map((event) {
       final transmissionData = event.snapshot.value as Map?;
       return {
-        "enabled": transmissionData?["enabled"] == true,
-        "volume": (transmissionData?["volume"] ?? 1.0).toDouble(),
+        "alert": transmissionData?["App"]["enabled"] == true,
+        "volume": (transmissionData?["App"]["volume"] ?? 1.0).toDouble(),
+        "vibration": transmissionData?["Vibration"]["enabled"] == true,
       };
     });
   }

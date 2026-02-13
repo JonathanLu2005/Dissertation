@@ -15,6 +15,9 @@ class NotificationSettingsService {
       "Laptop": {
         "enabled": data?["Laptop"]?["enabled"] ?? true,
         "volume": (data?["Laptop"]?["volume"] ?? 1.0).toDouble(),
+      },
+      "Vibration": {
+        "enabled": data?["Vibration"]?["enabled"] ?? true,
       }
     };
   }
@@ -24,6 +27,7 @@ class NotificationSettingsService {
     required double appVolume,
     required bool laptopEnabled,
     required double laptopVolume,
+    required bool vibrationEnabled,
   }) async {
     await database.set({
       "App": {
@@ -33,6 +37,9 @@ class NotificationSettingsService {
       "Laptop": {
         "enabled": laptopEnabled,
         "volume": laptopVolume,
+      },
+      "Vibration": {
+        "enabled": vibrationEnabled,
       }
     });
   }

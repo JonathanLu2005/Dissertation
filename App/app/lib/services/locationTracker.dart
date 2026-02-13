@@ -9,7 +9,9 @@ class LocationService {
     required Map locationData,
     required bool powerOn,
     required bool alertsEnabled,
+    required bool vibrationEnabled,
     required Function() alarm,
+    required Function() vibrate,
     required Function(String) onMessage,
     required Function(Map<String, dynamic>) backendUpdate,
   }) {
@@ -39,8 +41,14 @@ class LocationService {
       onMessage(receivedMessage);
       backendUpdate({"message": receivedMessage});
 
-      if (powerOn && alertsEnabled) {
-        alarm();
+      if (powerOn) {
+        if (alertsEnabled) {
+          alarm();
+        }
+
+        if (vibrationEnabled) {
+          vibrate();
+        }
       }
     }
   }

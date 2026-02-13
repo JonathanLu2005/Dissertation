@@ -5,11 +5,12 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/firebase.dart';
 import '../widgets/panel.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'dart:math';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/mic.dart';
 import '../services/locationTracker.dart';
 import '../services/streamService.dart';
+import '../services/loadPanelSettings.dart';
+import 'package:flutter/services.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,26 +26,36 @@ class _HomePageState extends State<HomePage> {
   late final WebViewController streamController;
   final MicStreamer micStreamer = MicStreamer();
   final LocationService locationTracker = LocationService();
+  final PanelSettingsService panelService = PanelSettingsService();
 
+  StreamSubscription? powerSubscription;
   StreamSubscription? subscription;
   StreamSubscription? cameraSubscription;
   StreamSubscription? location;
   StreamSubscription? micSubscription;
-  bool receivedAlert = false;
   String receivedMessage = "—";
   StreamSubscription? settingsSubscription;
   bool alertsEnabled = true; 
+  bool vibrationEnabled = true;
   double alertVolume = 1.0;
-  bool powerOn = false;
   Timer? timeCheck;
   DateTime? lastTimeCheck;
   bool cameraOn = false;
   bool streamLoaded = false;
   bool micOn = false;
+  bool powerOn = false;
 
   Future<void> alarm() async {
     await player.setVolume(alertVolume);
     await player.play(AssetSource("alert.mp3"));
+  }
+
+  Future<void> vibrate() async {
+    HapticFeedback.heavyImpact();
+    await Future.delayed(Duration(milliseconds: 50));
+    HapticFeedback.heavyImpact();
+    await Future.delayed(Duration(milliseconds: 50));
+    HapticFeedback.heavyImpact();
   }
 
   void checkConnection(Timer time) {
@@ -66,8 +77,14 @@ class _HomePageState extends State<HomePage> {
         "message": receivedMessage
       });
 
-      if (powerOn && alertsEnabled) {
-        alarm();
+      if (powerOn) {
+        if (alertsEnabled) {
+          alarm();
+        }
+
+        if (vibrationEnabled) {
+          vibrate();
+        }
       }
     }
   }
@@ -75,6 +92,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    powerSubscription = panelService.powerValue().listen((powerValue) {
+      setState(() {
+        powerOn = powerValue;
+      });
+    });
 
     micSubscription = firebase.listenToMic().listen((micValue) async {
       if (micValue && !micOn) {
@@ -98,7 +121,8 @@ class _HomePageState extends State<HomePage> {
 
     settingsSubscription = firebase.listenToSettings().listen((settings) {
       setState(() {
-        alertsEnabled = settings["enabled"] as bool? ?? true;
+        alertsEnabled = settings["alert"] as bool? ?? true;
+        vibrationEnabled = settings["vibration"] as bool? ?? true;
         alertVolume = (settings["volume"] as num?)?.toDouble() ?? 1.0;
       });
     });
@@ -112,12 +136,17 @@ class _HomePageState extends State<HomePage> {
         lastTimeCheck = DateTime.fromMillisecondsSinceEpoch(messageTimestamp * 1000);
       }
 
-      if (alert && !receivedAlert && alertsEnabled && powerOn) {
-        alarm();
+      if (alert && powerOn) {
+        if (alertsEnabled) {
+          alarm();
+        }
+        
+        if (vibrationEnabled) {
+          vibrate();
+        }
       }
 
       setState(() {
-        receivedAlert = alert;
         receivedMessage = message;
       });
     });
@@ -127,7 +156,9 @@ class _HomePageState extends State<HomePage> {
         locationData: locationData,
         powerOn: powerOn,
         alertsEnabled: alertsEnabled,
+        vibrationEnabled: vibrationEnabled,
         alarm: alarm,
+        vibrate: vibrate,
         onMessage: (message) {
           setState(() => receivedMessage = message); 
         },
@@ -146,6 +177,7 @@ class _HomePageState extends State<HomePage> {
     timeCheck?.cancel();
     player.dispose();
     cameraSubscription?.cancel();
+    powerSubscription?.cancel();
     super.dispose();
   }
 

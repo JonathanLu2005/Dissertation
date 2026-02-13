@@ -17,6 +17,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   double appVolume = 0;
   bool laptopEnabled = true;
   double laptopVolume = 0;
+  bool vibrationEnabled = true;
 
   bool isLoading = true;
 
@@ -34,6 +35,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       appVolume = data["App"]["volume"];
       laptopEnabled = data["Laptop"]["enabled"];
       laptopVolume = data["Laptop"]["volume"];
+      vibrationEnabled = data["Vibration"]["enabled"];
       isLoading = false;
     });
   }
@@ -44,6 +46,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       appVolume: appVolume,
       laptopEnabled: laptopEnabled,
       laptopVolume: laptopVolume,
+      vibrationEnabled: vibrationEnabled,
     );
   }
   
@@ -83,6 +86,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           ),
 
           const SizedBox(height: 24),
+
           const Text("Laptop Alerts", style: TextStyle(fontSize: 18)),
           ToggleSetting(
             label: "Enabled",
@@ -96,6 +100,17 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             value: laptopVolume,
             onChanged: (v) {
               setState(() => laptopVolume = v);
+              save();
+            },
+          ),
+
+          const SizedBox(height: 24), 
+          const Text("App Vibration", style: TextStyle(fontSize: 18)),
+          ToggleSetting(
+            label: "Enabled", 
+            value: vibrationEnabled, 
+            onChanged: (v) {
+              setState(() => vibrationEnabled = v);
               save();
             },
           ),
