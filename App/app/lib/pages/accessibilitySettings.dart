@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import '../widgets/enableToggle.dart';
-import '../services/loadLockSettings.dart';
+import '../services/loadAccessibilitySettings.dart';
 import '../widgets/informationButton.dart';
 import '../services/TTS.dart';
 
-class LockSettingsPage extends StatefulWidget {
-  const LockSettingsPage({super.key});
+class AccessibilitySettingsPage extends StatefulWidget {
+  const AccessibilitySettingsPage({super.key});
 
   @override
-  State<LockSettingsPage> createState() => _LockSettingsPageState();
+  State<AccessibilitySettingsPage> createState() => _AccessibilitySettingsPageState();
 }
 
-class _LockSettingsPageState extends State<LockSettingsPage> {
-  final LockSettingsService settingsService = LockSettingsService();
+class _AccessibilitySettingsPageState extends State<AccessibilitySettingsPage> {
+  final AccessibilitySettingsService settingsService = AccessibilitySettingsService();
 
-  bool powerLock = false;
-  bool detectionLock = false; 
+  bool pageAudio = false;
+  bool buttonAudio = false; 
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    TTSService.pageAnnouncement("Lock Settings");
+    TTSService.pageAnnouncement("Accessibility Settings");
     loadSettings();
   }
 
@@ -29,16 +29,16 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     final data = await settingsService.loadSettings();
 
     setState(() {
-      powerLock = data["powerlock"];
-      detectionLock = data["detectionlock"];
+      pageAudio = data["pageaudio"];
+      buttonAudio = data["buttonaudio"];
       isLoading = false;
     });
   }
 
   void save() {
     settingsService.saveSettings(
-      powerLock: powerLock,
-      detectionLock: detectionLock,
+      pageAudio: pageAudio,
+      buttonAudio: buttonAudio,
     );
   }
 
@@ -54,7 +54,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Lock Settings"),
+        title: const Text("Accessibility Settings"),
         backgroundColor: const Color(0xFFEFF2F1)
       ),
       body: ListView(  
@@ -62,20 +62,20 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
         children: [
           Row(
             children: [
-              const Text("Automatic Power Lock", style: TextStyle(fontSize: 18)),
+              const Text("Page Guidance", style: TextStyle(fontSize: 18)),
               InformationButton(
-                title: "Automatic Power Lock",
-                description: "Automatically locks the laptop if the system is enabled."
+                title: "Page Guidance",
+                description: "Verbally informs you what page you are on."
               ),
             ],
           ),
           ToggleSetting(
             label: "Enabled",
-            value: powerLock,
+            value: pageAudio,
             onChanged: (v) {
-              setState(() => powerLock = v);
+              setState(() => pageAudio = v);
               save();
-              TTSService.buttonAnnouncement("Automatic Power Lock", v);
+              TTSService.buttonAnnouncement("Page Guidance", v);
             },
           ),
 
@@ -83,20 +83,20 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
 
           Row(
             children: [
-              const Text("Automatic Detection Lock", style: TextStyle(fontSize: 18)),
+              const Text("Button Guidance", style: TextStyle(fontSize: 18)),
               InformationButton(
-                title: "Automatic Detection Lock",
-                description: "Automatically locks the laptop if the system detects a suspicious action."
+                title: "Button Guidance",
+                description: "Verbally informs you if you have activated or deactivated a button and which button it was."
               ),
             ],
           ),
           ToggleSetting(
             label: "Enabled", 
-            value: detectionLock,
+            value: buttonAudio,
             onChanged: (v) {
-              setState(() => detectionLock = v);
+              setState(() => buttonAudio = v);
               save();
-              TTSService.buttonAnnouncement("Automatic Detection Lock", v);
+              TTSService.buttonAnnouncement("Button Guidance", v);
             },
           ),
         ],

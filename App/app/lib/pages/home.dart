@@ -11,6 +11,7 @@ import '../services/locationTracker.dart';
 import '../services/streamService.dart';
 import '../services/loadPanelSettings.dart';
 import 'package:flutter/services.dart';
+import '../services/TTS.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -92,6 +93,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    TTSService.pageAnnouncement("Home");
 
     powerSubscription = panelService.powerValue().listen((powerValue) {
       setState(() {

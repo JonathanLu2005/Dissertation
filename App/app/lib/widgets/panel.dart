@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'controlButton.dart';
 import '../services/loadPanelSettings.dart';
 import '../services/map.dart';
+import '../services/TTS.dart';
 
 class ControlPanel extends StatefulWidget {
   const ControlPanel({super.key});
@@ -48,14 +49,17 @@ class ControlPanelState extends State<ControlPanel> {
   void togglePower() {
     setState(() => powerOn = !powerOn);
     save();
+    TTSService.buttonAnnouncement("Power", powerOn);
   }
 
   void toggleLock() {
     setState(() => lockOn = !lockOn);
     save();
+    TTSService.buttonAnnouncement("Lock", lockOn);
   }
 
   void showMap() {
+    TTSService.buttonAnnouncement("Map", true);
     showModalBottomSheet(  
       context: context,
       isScrollControlled: true,
@@ -66,11 +70,13 @@ class ControlPanelState extends State<ControlPanel> {
   void toggleCamera() {
     setState(() => cameraOn = !cameraOn);
     save();
+    TTSService.buttonAnnouncement("Live Stream", cameraOn);
   }
 
   void toggleMic() {
     setState(() => micOn = !micOn);
     save();
+    TTSService.buttonAnnouncement("Mic", micOn);
   }
 
   @override

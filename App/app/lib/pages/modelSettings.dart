@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/enableToggle.dart';
 import '../services/loadModelSettings.dart';
 import '../widgets/informationButton.dart';
+import '../services/TTS.dart';
 
 class ModelSettingsPage extends StatefulWidget {
   const ModelSettingsPage({super.key});
@@ -21,6 +22,7 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
   @override
   void initState() {
     super.initState();
+    TTSService.pageAnnouncement("Model Settings");
     loadSettings();
   }
 
@@ -77,6 +79,7 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
             onChanged: (v) {
               setState(() => backgroundEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Background Detection", v);
             },
           ),
 
@@ -97,6 +100,7 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
             onChanged: (v) {
               setState(() => proximityEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Proximity Detection", v);
             },
           ),
 
@@ -117,6 +121,7 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
             onChanged: (v) {
               setState(() => loiteringEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Loitering Detection", v);
             },
           ),
 
@@ -137,6 +142,7 @@ class _ModelSettingsPageState extends State<ModelSettingsPage> {
             onChanged: (v) {
               setState(() => maskEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Mask Detection", v);
             },
           ),
         ],

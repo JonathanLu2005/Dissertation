@@ -4,9 +4,22 @@ import '../widgets/tiles.dart';
 import '../pages/notificationSettings.dart';
 import '../pages/modelSettings.dart';
 import '../pages/lockSettings.dart';
+import '../pages/accessibilitySettings.dart';
+import '../services/TTS.dart';
 
-class SettingsPage extends StatelessWidget { 
+class SettingsPage extends StatefulWidget { 
   const SettingsPage({super.key}); 
+
+  @override 
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  @override 
+  void initState() {
+    super.initState();
+    TTSService.pageAnnouncement("Settings");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +65,17 @@ class SettingsPage extends StatelessWidget {
                 Navigator.push( 
                   context, 
                   MaterialPageRoute(builder: (_) => const LockSettingsPage(),),
+                );
+              },
+            ),
+
+            Tiles(
+              icon: Icons.visibility,
+              label: "Guidance",
+              onTap: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (_) => const AccessibilitySettingsPage(),),
                 );
               },
             ),

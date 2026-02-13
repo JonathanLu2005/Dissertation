@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/enableToggle.dart';
 import '../widgets/volumeToggle.dart';
 import '../services/loadNotificationSettings.dart';
+import '../services/TTS.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -24,6 +25,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   @override
   void initState() {
     super.initState();
+    TTSService.pageAnnouncement("Alarm Settings");
     loadSettings();
   }
 
@@ -68,13 +70,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text("App Alerts", style: TextStyle(fontSize: 18)),
+          const Text("Phone Alarm", style: TextStyle(fontSize: 18)),
           ToggleSetting(
             label: "Enabled",
             value: appEnabled,
             onChanged: (v) {
               setState(() => appEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Phone Alarm", v);
             },
           ),
           VolumeSetting(
@@ -87,13 +90,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
           const SizedBox(height: 24),
 
-          const Text("Laptop Alerts", style: TextStyle(fontSize: 18)),
+          const Text("Laptop Alarm", style: TextStyle(fontSize: 18)),
           ToggleSetting(
             label: "Enabled",
             value: laptopEnabled,
             onChanged: (v) {
               setState(() => laptopEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Laptop Alarm", v);
             },
           ),
           VolumeSetting(
@@ -105,13 +109,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           ),
 
           const SizedBox(height: 24), 
-          const Text("App Vibration", style: TextStyle(fontSize: 18)),
+          const Text("Phone Vibration", style: TextStyle(fontSize: 18)),
           ToggleSetting(
             label: "Enabled", 
             value: vibrationEnabled, 
             onChanged: (v) {
               setState(() => vibrationEnabled = v);
               save();
+              TTSService.buttonAnnouncement("Phone Vibration", v);
             },
           ),
         ],

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'pages/home.dart';
 import 'pages/settings.dart';
+import '../global/accessibilityListener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  AccessibilityListener.init();
   runApp(const MyApp());
 }
 
