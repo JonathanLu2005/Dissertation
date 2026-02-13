@@ -3,6 +3,7 @@ import '../widgets/navigation.dart';
 import '../widgets/tiles.dart';
 import '../pages/notificationSettings.dart';
 import '../pages/modelSettings.dart';
+import '../pages/lockSettings.dart';
 
 class SettingsPage extends StatelessWidget { 
   const SettingsPage({super.key}); 
@@ -40,6 +41,17 @@ class SettingsPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const NotificationSettingsPage(),),
+                );
+              },
+            ),
+
+            Tiles(
+              icon: Icons.lock_person_rounded,
+              label: "Locking",
+              onTap: () {
+                Navigator.push( 
+                  context, 
+                  MaterialPageRoute(builder: (_) => const LockSettingsPage(),),
                 );
               },
             ),
