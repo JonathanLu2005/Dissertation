@@ -1,6 +1,6 @@
 import time 
 import firebase_admin 
-from firebase_admin import credentials, db, storage
+from firebase_admin import credentials, db
 import os 
 from dotenv import load_dotenv 
 from pathlib import Path
@@ -21,6 +21,7 @@ from Desktop.Mask import mask
 from Desktop.Keyboard import keyboardMonitor
 from Desktop.USB import USB
 from Desktop.Battery import battery
+from Desktop.Trackpad import trackpad
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -54,7 +55,8 @@ def Firebase():
     Monitor5 = USB.USBMonitor()
     Monitor6 = battery.BatteryMonitor(10)
     Monitor7 = keyboardMonitor.KeyboardMonitor()
-    Monitors = (Monitor1, Monitor2, Monitor3, Monitor4, Monitor5, Monitor6, Monitor7)
+    Monitor8 = trackpad.TrackpadMonitor()
+    Monitors = (Monitor1, Monitor2, Monitor3, Monitor4, Monitor5, Monitor6, Monitor7, Monitor8)
 
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
     Camera = None

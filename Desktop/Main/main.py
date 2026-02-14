@@ -7,9 +7,8 @@ from Desktop.USB import USB
 from Desktop.Battery import battery
 import time
 import ctypes
-import cv2 
 
-def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
+def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame, Monitors):
     """ Calls computer vision components
 
     Argments:
@@ -18,18 +17,13 @@ def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
     - LoiteringModel (bool): True if activated
     - MaskModel (bool): True if activated
     - Frame (np.ndarray): Current frame
+    - Monitors (tuple): List of all the monitors
     
     Returns:
     - None
     """
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
-    Monitor1 = lingering.LingeringMonitor()
-    Monitor2 = distance.DistanceMonitor()
-    Monitor3 = mask.MaskMonitor()
-    Monitor4 = background.BackgroundMonitor()
-    Monitor5 = USB.USBMonitor()
-    Monitor6 = battery.BatteryMonitor(10)
-    Monitor7 = keyboardMonitor.KeyboardMonitor()
+    Monitor1, Monitor2, Monitor3, Monitor4, Monitor5, Monitor6, Monitor7, Monitor8 = Monitors
 
     try:
         # Live
@@ -60,15 +54,24 @@ def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
         Result7 = Monitor7.Live()
         if Result7:
             Message += "Keyboard was used\n"
+        Result8 = Monitor8.LiveMove()
+        Result9 = Monitor8.LiveClick()
+        Result10 = Monitor8.LiveScroll()
+        if Result8:
+            Message += "Mouse was moved\n"
+        if Result9:
+            Message += "Mouse was clicked\n"
+        if Result10:
+            Message += "Mouse was scrolled\n"
             
         if Message != "":
             #print(True)
             #print(Message)
-            yield (True,Message)
+            return (True,Message)
         else:
             #print(False)
             #print("No suspicious activity is detected")
-            yield (False,"No suspicious activity is detected")
+            return (False,"No suspicious activity is detected")
         time.sleep(1)
 
         # Test
@@ -77,14 +80,6 @@ def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame):
         #    time.sleep(1)
     except KeyboardInterrupt:
         print("Stopping monitoring...")
-    finally:
-        Monitor1.Release()
-        Monitor2.Release()
-        Monitor3.Release()
-        Monitor4.Release()
-        Monitor5.Release()
-        Monitor6.Release()
-        Monitor7.Release()
 
 if __name__ == "__main__":
     for _ in Main():
