@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'pages/home.dart';
 import 'pages/settings.dart';
+import 'pages/manual.dart';
 import '../global/accessibilityListener.dart';
 
 void main() async {
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const HomePage(), 
         '/settings': (context) => const SettingsPage(),
+        '/manual': (context) => const ManualPage(),
       },
     );
   }

@@ -14,6 +14,9 @@ class AppNavigationBar extends StatelessWidget {
       case 1:
         Navigator.pushReplacementNamed(context, "/settings");
         break;
+      case 2:
+        Navigator.pushReplacementNamed(context, "/manual");
+        break;
     }
   }
 
@@ -33,6 +36,10 @@ class AppNavigationBar extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.settings),
           label: "Settings",
+        ),
+        BottomNavigationBarItem( 
+          icon: Icon(Icons.book),
+          label: "Manual"
         ),
       ],
     );
