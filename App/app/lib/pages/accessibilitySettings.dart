@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/enableToggle.dart';
-import '../services/loadAccessibilitySettings.dart';
+import '../loaders/loadAccessibilitySettings.dart';
 import '../widgets/informationButton.dart';
 import '../services/TTS.dart';
 

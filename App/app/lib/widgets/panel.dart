@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'controlButton.dart';
-import '../services/loadPanelSettings.dart';
+import '../loaders/loadPanelSettings.dart';
 import '../services/map.dart';
 import '../services/TTS.dart';
 

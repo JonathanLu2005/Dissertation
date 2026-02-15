@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/enableToggle.dart';
 import '../widgets/volumeToggle.dart';
-import '../services/loadNotificationSettings.dart';
+import '../loaders/loadNotificationSettings.dart';
 import '../services/TTS.dart';
 
 class NotificationSettingsPage extends StatefulWidget {

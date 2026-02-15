@@ -9,7 +9,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../services/mic.dart';
 import '../services/locationTracker.dart';
 import '../services/streamService.dart';
-import '../services/loadPanelSettings.dart';
+import '../loaders/loadPanelSettings.dart';
 import 'package:flutter/services.dart';
 import '../services/TTS.dart';
 import '../global/ipState.dart';
