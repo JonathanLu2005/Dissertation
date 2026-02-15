@@ -23,54 +23,34 @@ def Main(BackgroundModel, ProximityModel, LoiteringModel, MaskModel, Frame, Moni
     - None
     """
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
-    Monitor1, Monitor2, Monitor3, Monitor4, Monitor5, Monitor6, Monitor7, Monitor8 = Monitors
+    LoiteringMonitor, ProximityMonitor, MaskMonitor, BackgroundMonitor, USBMonitor, BatteryMonitor, KeyboardMonitor, TrackpadMonitor = Monitors
 
     try:
-        # Live
         Message = ""
-
-        if LoiteringModel:
-            Result1 = Monitor1.Live(Frame)
-            if Result1:
-                Message += "Someone is loitering\n"
-        if ProximityModel:
-            Result2 = Monitor2.Live(Frame)
-            if Result2:
-                Message += "Someone is within proximity\n"
-        if MaskModel:
-            Result3 = Monitor3.Live(Frame)
-            if Result3:
-                Message += "Someone is wearing a mask\n"
-        if BackgroundModel:
-            Result4 = Monitor4.Live(Frame)
-            if Result4:
-                Message += "Background has changed\n"
-        Result5 = Monitor5.Live()
-        if Result5:
+        if LoiteringModel and LoiteringMonitor.Live(Frame):
+            Message += "Someone is loitering\n"
+        if ProximityModel and ProximityMonitor.Live(Frame):
+            Message += "Someone is within proximity\n"
+        if MaskModel and MaskMonitor.Live(Frame):
+            Message += "Someone is wearing a mask\n"
+        if BackgroundModel and BackgroundMonitor.Live(Frame):
+            Message += "Background has changed\n"
+        if USBMonitor.Live():
             Message += "USB has been modified\n"
-        Result6 = Monitor6.Live()
-        if Result6:
+        if BatteryMonitor.Live():
             Message += "Battery is low\n"
-        Result7 = Monitor7.Live()
-        if Result7:
+        if KeyboardMonitor.Live():
             Message += "Keyboard was used\n"
-        Result8 = Monitor8.LiveMove()
-        Result9 = Monitor8.LiveClick()
-        Result10 = Monitor8.LiveScroll()
-        if Result8:
+        if TrackpadMonitor.LiveMove():
             Message += "Mouse was moved\n"
-        if Result9:
+        if TrackpadMonitor.LiveClick():
             Message += "Mouse was clicked\n"
-        if Result10:
+        if TrackpadMonitor.LiveScroll():
             Message += "Mouse was scrolled\n"
             
         if Message != "":
-            #print(True)
-            #print(Message)
             return (True,Message)
         else:
-            #print(False)
-            #print("No suspicious activity is detected")
             return (False,"No suspicious activity is detected")
         time.sleep(1)
 
