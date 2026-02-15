@@ -4,11 +4,13 @@ import 'pages/home.dart';
 import 'pages/settings.dart';
 import 'pages/manual.dart';
 import '../global/accessibilityListener.dart';
+import '../global/ipListener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   AccessibilityListener.init();
+  IPListener.init();
   runApp(const MyApp());
 }
 

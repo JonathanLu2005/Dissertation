@@ -22,6 +22,8 @@ from Desktop.Keyboard import keyboardMonitor
 from Desktop.USB import USB
 from Desktop.Battery import battery
 from Desktop.Trackpad import trackpad
+from Desktop.Performance import performance
+import socket
 
 def Firebase():
     """ Establish connection to the Firebase server
@@ -36,12 +38,17 @@ def Firebase():
     FirebaseID = os.getenv("FIREBASE_PROJECT_ID")
     firebase_admin.initialize_app(Credentials, {"databaseURL": f"https://{FirebaseID}-default-rtdb.europe-west1.firebasedatabase.app"})
     BackendReference = db.reference("BackendMessages")
+    PerformanceReference = db.reference("Performance")
+    IPReference = db.reference("IP")
     AlertReference = db.reference("AlertSettings/Laptop")
     LocationReference = db.reference("LaptopLocation")
     LockingReference = db.reference("LockSettings")
     ModelReference = db.reference("ModelSettings")
     ControlPanel = db.reference("RemoteControl")
     StreamCurrent = False
+
+    LocalIP = str(socket.gethostbyname(socket.gethostname()))
+    IPReference.set({"ip": LocalIP})
 
     #ImagePath = os.path.join(BaseDirectory, "Warning.png")
     #Warning = cv2.imread(ImagePath)
@@ -56,6 +63,7 @@ def Firebase():
     Monitor6 = battery.BatteryMonitor(10)
     Monitor7 = keyboardMonitor.KeyboardMonitor()
     Monitor8 = trackpad.TrackpadMonitor()
+    Monitor9 = performance.PerformanceMonitor()
     Monitors = (Monitor1, Monitor2, Monitor3, Monitor4, Monitor5, Monitor6, Monitor7, Monitor8)
 
     ctypes.windll.kernel32.SetThreadExecutionState(0x80000002)
@@ -65,6 +73,10 @@ def Firebase():
     StartAudioStream()
 
     while True:
+        #CPU, Memory = Monitor9.Live()
+        #print(Battery)
+        #print(CPU)
+        #print(Memory)
         ControlPanelResults = ControlPanel.get() or {}
         PowerOn = ControlPanelResults.get("power", False)
         LockOn = ControlPanelResults.get("lock", False)

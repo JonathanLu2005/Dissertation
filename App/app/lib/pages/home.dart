@@ -12,6 +12,7 @@ import '../services/streamService.dart';
 import '../services/loadPanelSettings.dart';
 import 'package:flutter/services.dart';
 import '../services/TTS.dart';
+import '../global/ipState.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -114,7 +115,8 @@ class _HomePageState extends State<HomePage> {
       });
     });
 
-    streamController = StreamService.build("http://172.25.11.164:8000/Stream",);
+    final String url = "http://" + IPState.ip + ":8000/Stream";
+    streamController = StreamService.build(url,);
 
     cameraSubscription = firebase.listenToCamera().listen((cameraValue) {
       setState(() {
