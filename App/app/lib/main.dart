@@ -4,6 +4,7 @@ import 'pages/home.dart';
 import 'pages/settings.dart';
 import 'pages/manual.dart';
 import 'pages/gallery.dart';
+import 'pages/logs.dart';
 import '../global/accessibilityListener.dart';
 import '../global/ipListener.dart';
 import '../services/cloud.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const HomePage(), 
         '/settings': (context) => const SettingsPage(),
         '/gallery': (context) => const GalleryPage(),
+        '/logs': (context) => const LogsPage(),
         '/manual': (context) => const ManualPage(),
       },
     );

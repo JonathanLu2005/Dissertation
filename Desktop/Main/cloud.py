@@ -9,6 +9,19 @@ SupabaseURL = os.getenv("SUPABASE_URL")
 SupabaseKey = os.getenv("SUPABASE_KEY")
 Supabase = create_client(SupabaseURL, SupabaseKey)
 
+def UploadLog(Message):
+    """ Upload log to database
+
+    Arguments:
+    - Message (str): Message to upload
+
+    Returns:
+    - None
+    """
+    Supabase.table("logs").insert({
+        "message": Message
+    }).execute()
+
 def UploadFrame(Frame, FileName):
     """ Upload frame to the Supabase 
 

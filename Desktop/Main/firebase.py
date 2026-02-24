@@ -11,6 +11,7 @@ from Desktop.Main.location import GetLocation
 from Desktop.Main.generateMonitors import GenerateMonitors
 from Desktop.Main.generateReferences import GenerateFirebase, RetrieveControlPanel, RetrieveAlerts, RetrieveLocks, RetrieveModels
 from Desktop.Main.setReferences import SetIP, SetLocation, SetBackend
+from Desktop.Main.cloud import UploadFrame, UploadLog
 import socket
 
 def Firebase():
@@ -21,6 +22,7 @@ def Firebase():
     """
     BackendReference, PerformanceReference, IPReference, AlertReference, LocationReference, LockingReference, ModelReference, ControlPanel = GenerateFirebase()
     StreamCurrent = False
+    PreviousSuspiciousDetected = False
 
     LocalIP = str(socket.gethostbyname(socket.gethostname()))
     SetIP(IPReference, LocalIP)
@@ -68,6 +70,8 @@ def Firebase():
         if LockOn:
             ctypes.windll.user32.LockWorkStation()
 
+        CurrentTime = int(time.time())
+
         if PowerOn:
             if PowerLock:
                 ctypes.windll.user32.LockWorkStation()
@@ -82,7 +86,14 @@ def Firebase():
                 if AlertsEnabled:
                     winsound.Beep(1500, int(500 * AlertsVolume))
 
-        SetBackend(BackendReference, SuspiciousDetected, Message, int(time.time()))
+                if not PreviousSuspiciousDetected:
+                    ImageName = str(CurrentTime) + ".jpg"
+                    UploadFrame(Frame, ImageName)
+                    UploadLog(Message)
+            PreviousSuspiciousDetected = SuspiciousDetected
+            
+
+        SetBackend(BackendReference, SuspiciousDetected, Message, CurrentTime)
         print("Sent:", Message)
         time.sleep(1)
 
