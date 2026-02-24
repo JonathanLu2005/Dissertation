@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'pages/home.dart';
 import 'pages/settings.dart';
 import 'pages/manual.dart';
-import 'pages/gallery.dart';
 import 'pages/logs.dart';
 import '../global/accessibilityListener.dart';
 import '../global/ipListener.dart';
@@ -31,7 +30,6 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const HomePage(), 
         '/settings': (context) => const SettingsPage(),
-        '/gallery': (context) => const GalleryPage(),
         '/logs': (context) => const LogsPage(),
         '/manual': (context) => const ManualPage(),
       },

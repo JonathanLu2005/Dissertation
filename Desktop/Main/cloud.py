@@ -9,25 +9,13 @@ SupabaseURL = os.getenv("SUPABASE_URL")
 SupabaseKey = os.getenv("SUPABASE_KEY")
 Supabase = create_client(SupabaseURL, SupabaseKey)
 
-def UploadLog(Message):
+def UploadLog(Frame, FileName, Message):
     """ Upload log to database
-
-    Arguments:
-    - Message (str): Message to upload
-
-    Returns:
-    - None
-    """
-    Supabase.table("logs").insert({
-        "message": Message
-    }).execute()
-
-def UploadFrame(Frame, FileName):
-    """ Upload frame to the Supabase 
 
     Arguments:
     - Frame (np.ndarray): Frame when suspicious activity is detected
     - FileName (str): Name of image
+    - Message (str): Message to upload
 
     Returns:
     - None
@@ -40,9 +28,10 @@ def UploadFrame(Frame, FileName):
         ImageData,
         {"content-type": "image/jpeg"}
     )
-    
+
     PublicURL = Supabase.storage.from_("snapshots").get_public_url(FileName)
 
-    Supabase.table("snapshots").insert({
+    Supabase.table("logs").insert({
+        "message": Message,
         "image_url": PublicURL
     }).execute()

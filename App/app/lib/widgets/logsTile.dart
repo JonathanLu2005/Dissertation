@@ -8,6 +8,7 @@ class LogsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageURL = log['image_url'];
     DateTime timestamp = DateTime.parse(log['created_at']);
     String time = DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
 
@@ -16,9 +17,24 @@ class LogsTile extends StatelessWidget {
         showDialog( 
           context: context, 
           barrierDismissible: true, 
-          builder: (_) => AlertDialog(
-            title: const Text('Security Log'),
-            content: Text(log['message']),
+          builder: (_) => Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    log['message'],
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(imageURL),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },

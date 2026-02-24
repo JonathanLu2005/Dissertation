@@ -11,7 +11,7 @@ from Desktop.Main.location import GetLocation
 from Desktop.Main.generateMonitors import GenerateMonitors
 from Desktop.Main.generateReferences import GenerateFirebase, RetrieveControlPanel, RetrieveAlerts, RetrieveLocks, RetrieveModels
 from Desktop.Main.setReferences import SetIP, SetLocation, SetBackend
-from Desktop.Main.cloud import UploadFrame, UploadLog
+from Desktop.Main.cloud import UploadLog
 import socket
 
 def Firebase():
@@ -88,8 +88,7 @@ def Firebase():
 
                 if not PreviousSuspiciousDetected:
                     ImageName = str(CurrentTime) + ".jpg"
-                    UploadFrame(Frame, ImageName)
-                    UploadLog(Message)
+                    UploadLog(Frame, ImageName, Message)
             PreviousSuspiciousDetected = SuspiciousDetected
             
 

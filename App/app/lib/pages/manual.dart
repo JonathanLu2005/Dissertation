@@ -25,7 +25,7 @@ class _ManualPageState extends State<ManualPage> {
         title: const Text("Manual"),
         backgroundColor: const Color(0xFFEFF2F1)
       ),
-      bottomNavigationBar: const AppNavigationBar(currentPage: 4),
+      bottomNavigationBar: const AppNavigationBar(currentPage: 3),
       body: Padding(
         padding: const EdgeInsets.all(16),
 
