@@ -79,6 +79,7 @@ class _ManualPageState extends State<ManualPage> {
                       InfoRow(Icons.home, "Main system control"),
                       InfoRow(Icons.settings, "System configuration for detection and mitigations"),
                       InfoRow(Icons.accessibility_new, "Accessibility configurations"),
+                      InfoRow(Icons.security, "Recorded security logs"),
                     ],
                   ),
                 ],
