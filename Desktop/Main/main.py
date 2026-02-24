@@ -1,10 +1,3 @@
-from Desktop.Background import background
-from Desktop.Movement import distance, gesture
-from Desktop.Lingering import lingering
-from Desktop.Mask import mask
-from Desktop.Keyboard import keyboardMonitor
-from Desktop.USB import USB
-from Desktop.Battery import battery
 import time
 import ctypes
 

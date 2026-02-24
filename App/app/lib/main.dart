@@ -3,12 +3,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'pages/home.dart';
 import 'pages/settings.dart';
 import 'pages/manual.dart';
+import 'pages/gallery.dart';
 import '../global/accessibilityListener.dart';
 import '../global/ipListener.dart';
+import '../services/cloud.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await SupabaseService.init();
   AccessibilityListener.init();
   IPListener.init();
   runApp(const MyApp());
@@ -27,6 +30,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const HomePage(), 
         '/settings': (context) => const SettingsPage(),
+        '/gallery': (context) => const GalleryPage(),
         '/manual': (context) => const ManualPage(),
       },
     );
