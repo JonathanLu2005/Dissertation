@@ -15,6 +15,40 @@ class LogsPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Security Logs"),
         backgroundColor: const Color(0xFFEFF2F1),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () async {
+              final confirmation = await showDialog<bool>( 
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text("Delete logs"),
+                  content: const Text("This will permanently delete all logs."),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false), 
+                      child: const Text("Cancel", style: TextStyle(color: Colors.black)),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true), 
+                      child: const Text("Delete", style: TextStyle(color: Colors.black)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmation == true) {
+                //await LogService.deleteLogs();
+                try {
+                  await LogService.deleteLogs();
+                  print("RPC success");
+                } catch (e) {
+                  print("RPC error: $e");
+                }
+              }
+            },
+          )
+        ],
       ),
       bottomNavigationBar: const AppNavigationBar(currentPage: 2),
       body: StreamBuilder<List<Map<String, dynamic>>>(
